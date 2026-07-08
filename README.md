@@ -1,1 +1,1 @@
-# Szakdolgozat a
+## Szakdolgozat a
