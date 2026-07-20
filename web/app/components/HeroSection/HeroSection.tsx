@@ -1,6 +1,13 @@
-import React from "react";
+import React, { useState } from "react";
+import useIsMobile from "../../hooks/useIsMobile";
 
 const HeroSection = () => {
+  const isMobile = useIsMobile();
+
+  const style = !isMobile
+    ? "h-full w-full bg-cover bg-center -mt-40"
+    : "min-h-[320px] w-full bg-cover bg-center max-h-[320px]";
+
   return (
     <section className="flex flex-col h-[100vh] lg:mt-0 mt-8">
       <div className="flex flex-col h-full w-full items-center justify-center bg-gradient-to-t from-white via-[#fffaf3] to-[#fff5eb] text-center pt-32">
@@ -19,7 +26,8 @@ const HeroSection = () => {
           style={{
             backgroundImage: `url('/images/3730286_73962.png')`,
           }}
-          className="h-full w-full bg-cover bg-center -mt-40"
+          // className="lg:h-full sm:min-h-[320px] w-full bg-cover bg-center lg:-mt-40 sm:max-h-[320px]"
+          className={style}
         ></div>
       </div>
     </section>
