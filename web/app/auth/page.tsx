@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useMutation } from "@tanstack/react-query";
 import AuthLoginForm, {
   type LoginFormValues,
 } from "./components/AuthLoginForm";
@@ -9,8 +10,9 @@ import AuthRegisterForm, {
   type RegisterFormValues,
 } from "./components/AuthRegisterForm";
 import { hashPassword } from "../utils/hash-password";
-import { setAccessToken } from "../utils/token-storage";
+import { setAuthTokens } from "../utils/token-storage";
 import { showError, showSuccess } from "../utils/notification";
+import { login, type AuthResponse, register } from "../utils/auth-api";
 
 type AuthMode = "login" | "register";
 
@@ -20,40 +22,6 @@ const authHighlights = [
   "A backend hitelesítés később ide kapcsolható.",
 ];
 
-async function readApiResponseBody(response: Response) {
-  const responseText = await response.text();
-
-  if (!responseText.trim()) {
-    return null;
-  }
-
-  try {
-    return JSON.parse(responseText) as {
-      accessToken?: string;
-      user?: { email?: string };
-      message?: string;
-    };
-  } catch {
-    return { message: responseText };
-  }
-}
-
-function getApiErrorMessage(
-  response: Response,
-  data: { message?: string } | null,
-  fallbackMessage: string,
-) {
-  if (data?.message) {
-    return data.message;
-  }
-
-  if (!response.ok) {
-    return `${fallbackMessage} (${response.status} ${response.statusText})`;
-  }
-
-  return fallbackMessage;
-}
-
 export default function AuthPage() {
   const [mode, setMode] = useState<AuthMode>("login");
   const [loginSubmitError, setLoginSubmitError] = useState<string | null>(null);
@@ -61,84 +29,58 @@ export default function AuthPage() {
     null,
   );
   const navigate = useNavigate();
-  const apiBaseUrl = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
-
-  const onLoginSubmit = async (values: LoginFormValues) => {
-    setLoginSubmitError(null);
-
-    try {
-      const response = await fetch(`${apiBaseUrl}/auth/login`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify({
-          email: values.email,
-          passwordHash: await hashPassword(values.password),
-        }),
-      });
-
-      const data = await readApiResponseBody(response);
-
-      if (!response.ok) {
-        throw new Error(
-          getApiErrorMessage(response, data, "Sikertelen bejelentkezés."),
-        );
-      }
-
-      if (data?.accessToken) {
-        setAccessToken(data.accessToken);
+  const loginMutation = useMutation<AuthResponse, Error, LoginFormValues>({
+    mutationFn: async (values) =>
+      login({
+        email: values.email,
+        passwordHash: await hashPassword(values.password),
+      }),
+    onSuccess: (data) => {
+      if (data.accessToken && data.refreshToken) {
+        setAuthTokens(data.accessToken, data.refreshToken);
       }
 
       showSuccess("Login successful.");
       navigate("/pets");
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Ismeretlen hiba történt.";
-      setLoginSubmitError(message);
-      showError(message);
-    }
-  };
+    },
+    onError: (error) => {
+      setLoginSubmitError(error.message);
+      showError(error.message);
+    },
+  });
 
-  const onRegisterSubmit = async (values: RegisterFormValues) => {
-    setRegisterSubmitError(null);
-
-    try {
-      const response = await fetch(`${apiBaseUrl}/auth/register`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify({
+  const registerMutation = useMutation<AuthResponse, Error, RegisterFormValues>(
+    {
+      mutationFn: async (values) =>
+        register({
           email: values.email,
           passwordHash: await hashPassword(values.password),
           firstName: values.firstName,
           lastName: values.lastName,
         }),
-      });
+      onSuccess: (data) => {
+        if (data.accessToken && data.refreshToken) {
+          setAuthTokens(data.accessToken, data.refreshToken);
+        }
 
-      const data = await readApiResponseBody(response);
+        showSuccess("Registration successful.");
+        navigate("/pets");
+      },
+      onError: (error) => {
+        setRegisterSubmitError(error.message);
+        showError(error.message);
+      },
+    },
+  );
 
-      if (!response.ok) {
-        throw new Error(
-          getApiErrorMessage(response, data, "Sikertelen regisztráció."),
-        );
-      }
+  const onLoginSubmit = async (values: LoginFormValues) => {
+    setLoginSubmitError(null);
+    await loginMutation.mutateAsync(values);
+  };
 
-      if (data?.accessToken) {
-        setAccessToken(data.accessToken);
-      }
-
-      showSuccess("Registration successful.");
-      navigate("/pets");
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Ismeretlen hiba történt.";
-      setRegisterSubmitError(message);
-      showError(message);
-    }
+  const onRegisterSubmit = async (values: RegisterFormValues) => {
+    setRegisterSubmitError(null);
+    await registerMutation.mutateAsync(values);
   };
 
   const activeButtonClass =

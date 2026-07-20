@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { Navigate } from "react-router-dom";
-import { getAccessToken } from "../../utils/token-storage";
+import useAuthSession from "../../hooks/useAuthSession";
 import { showError } from "../../utils/notification";
 
 type RequireAuthProps = {
@@ -10,35 +10,21 @@ type RequireAuthProps = {
 };
 
 export default function RequireAuth({ children }: RequireAuthProps) {
-  const [hasToken, setHasToken] = useState<boolean | null>(null);
   const hasShownAccessError = useRef(false);
+  const { status } = useAuthSession();
 
   useEffect(() => {
-    const syncAuthState = () => setHasToken(Boolean(getAccessToken()));
-
-    syncAuthState();
-
-    window.addEventListener("storage", syncAuthState);
-    window.addEventListener("floofs-auth-changed", syncAuthState);
-
-    return () => {
-      window.removeEventListener("storage", syncAuthState);
-      window.removeEventListener("floofs-auth-changed", syncAuthState);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (hasToken === false && !hasShownAccessError.current) {
+    if (status === "unauthenticated" && !hasShownAccessError.current) {
       showError("Log in before accessing pets.");
       hasShownAccessError.current = true;
     }
-  }, [hasToken]);
+  }, [status]);
 
-  if (hasToken === null) {
+  if (status === "loading") {
     return null;
   }
 
-  if (!hasToken) {
+  if (status === "unauthenticated") {
     return <Navigate to="/auth" replace />;
   }
 

@@ -3,6 +3,13 @@ import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
 
 export default defineConfig({
+  server: {
+    host: "0.0.0.0",
+    watch: {
+      usePolling: true,
+      interval: 100,
+    },
+  },
   plugins: [
     react(),
     VitePWA({
@@ -11,7 +18,8 @@ export default defineConfig({
       manifest: {
         name: "Szakdolgozat",
         short_name: "Szakdolgozat",
-        description: "Örökbefogadási landing oldal React Routerral és PWA támogatással.",
+        description:
+          "Örökbefogadási landing oldal React Routerral és PWA támogatással.",
         theme_color: "#fec8e9",
         background_color: "#ffffff",
         display: "standalone",

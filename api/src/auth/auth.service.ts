@@ -8,12 +8,23 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Prisma, UserRole } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { hashPassword, verifyPassword } from './utils/password-hash.util';
+
+type AuthTokenPayload = {
+  sub: string;
+  email: string;
+  role: UserRole;
+};
+
+type RefreshTokenPayload = AuthTokenPayload & {
+  tokenType: 'refresh';
+};
 
 const safeUserSelect = {
   id: true,
@@ -41,6 +52,7 @@ export class AuthService {
   constructor(
     private readonly prismaService: PrismaService,
     private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
   ) {}
 
   async register(registerDto: RegisterDto) {
@@ -111,6 +123,40 @@ export class AuthService {
     return this.buildAuthResponse(user);
   }
 
+  async refresh(refreshToken: string) {
+    if (!refreshToken) {
+      throw new BadRequestException('refreshToken is required.');
+    }
+
+    let payload: RefreshTokenPayload;
+
+    try {
+      payload = await this.jwtService.verifyAsync<RefreshTokenPayload>(
+        refreshToken,
+        {
+          secret: this.getRefreshTokenSecret(),
+        },
+      );
+    } catch {
+      throw new UnauthorizedException('Invalid or expired refresh token');
+    }
+
+    if (payload.tokenType !== 'refresh') {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    const user = await this.prismaService.user.findUnique({
+      where: { id: payload.sub },
+      select: authUserSelect,
+    });
+
+    if (!user || !user.isActive) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    return this.buildAuthResponse(user);
+  }
+
   async me(userId: string) {
     const user = await this.prismaService.user.findUnique({
       where: { id: userId },
@@ -137,9 +183,33 @@ export class AuthService {
         sub: user.id,
         email: user.email,
         role: user.role,
-      }),
+      } satisfies AuthTokenPayload),
+      refreshToken: this.jwtService.sign(
+        {
+          sub: user.id,
+          email: user.email,
+          role: user.role,
+          tokenType: 'refresh',
+        } satisfies RefreshTokenPayload,
+        {
+          secret: this.getRefreshTokenSecret(),
+          expiresIn: this.getRefreshTokenExpiresIn(),
+        },
+      ),
       user: this.toSafeUser(user),
     };
+  }
+
+  private getRefreshTokenSecret() {
+    return (
+      this.configService.get<string>('JWT_REFRESH_SECRET') ??
+      'floofs-dev-refresh-secret'
+    );
+  }
+
+  private getRefreshTokenExpiresIn() {
+    return (this.configService.get<string>('JWT_REFRESH_EXPIRES_IN') ??
+      '7d') as any;
   }
 
   private toSafeUser(user: AuthUser): SafeUser {
