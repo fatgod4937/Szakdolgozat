@@ -1,10 +1,10 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets  = ["native", "debian-openssl-3.0.x"]
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 enum UserRole {
@@ -13,18 +13,69 @@ enum UserRole {
   SHELTER
 }
 
+enum PetGender {
+  MALE
+  FEMALE
+  UNKNOWN
+}
+
+enum PetSize {
+  SMALL
+  MEDIUM
+  LARGE
+  EXTRA_LARGE
+}
+
+enum PetAdoptionStatus {
+  AVAILABLE
+  RESERVED
+  ADOPTED
+}
+
 model User {
   id           String   @id @default(uuid())
   email        String   @unique
   passwordHash String
   firstName    String
   lastName     String
+  phoneNumber  String?
   role         UserRole @default(USER)
   isActive     Boolean  @default(true)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+  isVerified   Boolean  @default(false)
+  emailVerificationTokenHash String? @unique
+  emailVerificationExpiresAt DateTime?
+  passwordResetTokenHash String? @unique
+  passwordResetExpiresAt DateTime?
+  profilePictureUrl String?
+  bio              String?
+  location         String?
+  latitude         Float?
+  longitude        Float?
+
+  pets                Pet[]         @relation("PetOwner")
+  chatThreadsOwned     ChatThread[]   @relation("ChatThreadOwner")
+  chatThreadsAsAdopter ChatThread[]   @relation("ChatThreadAdopter")
+  chatMessages         ChatMessage[]  @relation("ChatMessageSender")
+  chatDevices          ChatDevice[]
+  chatKeyBackup        ChatKeyBackup?
+  chatThreadReadReceipts ChatThreadReadReceipt[]
+  pushSubscriptions    PushSubscription[]
+  deactivation         UserDeactivation?
+  favorites            Favorite[]
 
   @@map("users")
+}
+
+model UserDeactivation {
+  userId        String   @id
+  reason        String?
+  deactivatedAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_deactivations")
 }
 
 model Shelter {
@@ -34,9 +85,208 @@ model Shelter {
   city         String?
   contactEmail String?
   websiteUrl   String?
-  verified     Boolean  @default(false)
+  isVerified     Boolean  @default(false)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
   @@map("shelters")
+}
+
+model Pet {
+  id               String             @id @default(uuid())
+  name             String
+  species          String
+  speciesId        String?
+  speciesRecord    Species?           @relation(fields: [speciesId], references: [id], onDelete: SetNull)
+
+  breedId          String?
+  breedRecord      Breed?             @relation(fields: [breedId], references: [id], onDelete: SetNull)
+
+  ageYears         Int?
+  ageMonths        Int?
+
+  gender           PetGender          @default(UNKNOWN)
+  size             PetSize            @default(MEDIUM)
+
+  location         String
+  city             String?
+  latitude         Float?
+  longitude        Float?
+  description      String
+  goodWithChildren Boolean            @default(false)
+  goodWithDogs     Boolean            @default(false)
+  goodWithCats     Boolean            @default(false)
+  vaccinated       Boolean            @default(false)
+  neutered         Boolean            @default(false)
+  houseTrained     Boolean            @default(false)
+
+  adoptionStatus   PetAdoptionStatus   @default(AVAILABLE)
+
+  photoUrls        String[]
+
+  ownerId          String?
+  owner            User?              @relation("PetOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  chatThreads      ChatThread[]
+  favorites        Favorite[]
+
+  @@index([breedId])
+  @@index([speciesId])
+  @@index([latitude, longitude])
+  @@map("pets")
+}
+
+model Favorite {
+  userId    String
+  petId     String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pet  Pet  @relation(fields: [petId], references: [id], onDelete: Cascade)
+
+  @@id([userId, petId])
+  @@index([petId])
+  @@map("favorites")
+}
+
+model Species {
+  id        String   @id @default(uuid())
+  enName    String   @unique
+  huName    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  breeds Breed[]
+  pets   Pet[]
+
+  @@map("species")
+}
+
+model Breed {
+  id        String   @id @default(uuid())
+  enName    String
+  huName    String
+  speciesId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  species Species @relation(fields: [speciesId], references: [id], onDelete: Restrict)
+  pets    Pet[]
+
+  @@unique([speciesId, enName])
+  @@index([enName])
+  @@index([speciesId])
+  @@map("breeds")
+}
+
+model ChatThread {
+  id            String        @id @default(uuid())
+  petId         String
+  ownerId       String
+  adopterId     String
+  lastMessageAt  DateTime?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  pet           Pet           @relation(fields: [petId], references: [id], onDelete: Cascade)
+  owner         User          @relation("ChatThreadOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  adopter       User          @relation("ChatThreadAdopter", fields: [adopterId], references: [id], onDelete: Cascade)
+  messages      ChatMessage[]
+  readReceipts  ChatThreadReadReceipt[]
+
+  @@unique([petId, ownerId, adopterId])
+  @@index([ownerId, adopterId])
+  @@index([petId, lastMessageAt])
+  @@map("chat_threads")
+}
+
+model ChatThreadReadReceipt {
+  threadId   String
+  userId     String
+  lastReadAt DateTime @default(now())
+
+  thread ChatThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  user   User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([threadId, userId])
+  @@index([userId, lastReadAt])
+  @@map("chat_thread_read_receipts")
+}
+
+model PushSubscription {
+  id        String   @id @default(uuid())
+  userId    String
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("push_subscriptions")
+}
+
+model ChatMessage {
+  id             String      @id @default(uuid())
+  threadId       String
+  senderId       String
+  senderDeviceId String?
+  content        String?
+  ciphertext     String?
+  nonce          String?
+  createdAt      DateTime    @default(now())
+
+  thread       ChatThread                 @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  sender       User                       @relation("ChatMessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  keyEnvelopes ChatMessageKeyEnvelope[]
+
+  @@index([threadId, createdAt])
+  @@map("chat_messages")
+}
+
+model ChatDevice {
+  id        String   @id
+  userId    String
+  publicKey String
+  createdAt DateTime @default(now())
+  lastSeenAt DateTime @updatedAt
+
+  user         User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  keyEnvelopes ChatMessageKeyEnvelope[]
+
+  @@index([userId])
+  @@map("chat_devices")
+}
+
+model ChatMessageKeyEnvelope {
+  id         String   @id @default(uuid())
+  messageId  String
+  deviceId   String
+  ciphertext String
+  nonce      String
+
+  message ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  device  ChatDevice  @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, deviceId])
+  @@index([deviceId])
+  @@map("chat_message_key_envelopes")
+}
+
+model ChatKeyBackup {
+  userId     String   @id
+  ciphertext String
+  nonce      String
+  salt       String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("chat_key_backups")
 }

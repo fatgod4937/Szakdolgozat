@@ -1,14 +1,13 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 
 const AboutUs = () => {
+  const { t } = useTranslation();
+
   return (
-    <div className="flex flex-col mt-20" id="about">
-      <h2 className="text-2xl font-bold">Kik vagyunk</h2>
-      <p className="text-gray-500 max-w-2/3">
-        Lorem ipsum dolor sit amet consectetur adipisicing elit. Nihil ex
-        blanditiis molestias consequatur sed optio, ipsam aut veritatis ducimus
-        fuga voluptatum molestiae? Magnam harum a nemo ut rerum? Quisquam, fuga!
-      </p>
+    <div className="flex flex-col mt-20 px-1 sm:px-0" id="about">
+      <h2 className="text-2xl font-bold">{t("home.about")}</h2>
+      <p className="max-w-prose text-gray-500">{t("home.aboutText")}</p>
     </div>
   );
 };

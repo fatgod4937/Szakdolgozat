@@ -5,6 +5,7 @@ import {
   NOTIFICATION_EVENT_NAME,
   type NotificationPayload,
 } from "../../utils/notification";
+import { useTranslation } from "react-i18next";
 
 const notificationStyles: Record<
   NotificationPayload["type"],
@@ -28,6 +29,7 @@ const notificationStyles: Record<
 };
 
 export default function NotificationBanner() {
+  const { t } = useTranslation();
   const [notification, setNotification] = useState<NotificationPayload | null>(
     null,
   );
@@ -83,9 +85,9 @@ export default function NotificationBanner() {
             type="button"
             onClick={() => setNotification(null)}
             className="rounded-full px-2 py-1 text-xs font-medium opacity-80 transition hover:opacity-100"
-            aria-label="Dismiss notification"
+            aria-label={t("common.dismissNotification")}
           >
-            Close
+            {t("common.close")}
           </button>
         </div>
       </div>

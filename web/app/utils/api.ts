@@ -1,4 +1,8 @@
-const apiBaseUrl = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
+const apiBaseUrl = import.meta.env.VITE_API_URL;
+
+function getAccessToken() {
+  return localStorage.getItem("floofs_access_token");
+}
 
 export type ApiResponseBody = {
   accessToken?: string;
@@ -36,17 +40,37 @@ export function getApiErrorMessage(
   return fallbackMessage;
 }
 
-export async function postJson<TResponse>(
+type RequestOptions = {
+  method: string;
+  body?: BodyInit | null;
+  auth?: boolean;
+  isFormData?: boolean;
+};
+
+async function request<TResponse>(
   path: string,
-  body: unknown,
+  options: RequestOptions,
 ): Promise<TResponse> {
+  const headers: Record<string, string> = {
+    Accept: "application/json",
+  };
+
+  if (options.auth) {
+    const token = getAccessToken();
+
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+  }
+
+  if (!options.isFormData && options.body) {
+    headers["Content-Type"] = "application/json";
+  }
+
   const response = await fetch(`${apiBaseUrl}${path}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-    body: JSON.stringify(body),
+    method: options.method,
+    headers,
+    body: options.body,
   });
 
   const data = await readApiResponseBody(response);
@@ -58,4 +82,68 @@ export async function postJson<TResponse>(
   }
 
   return (data ?? {}) as TResponse;
+}
+
+export async function getJson<TResponse>(path: string, auth = true) {
+  return request<TResponse>(path, {
+    method: "GET",
+    auth,
+  });
+}
+
+export async function postJson<TResponse>(
+  path: string,
+  body: unknown,
+  auth = false,
+) {
+  return request<TResponse>(path, {
+    method: "POST",
+    body: JSON.stringify(body),
+    auth,
+  });
+}
+
+export async function patchJson<TResponse>(
+  path: string,
+  body: unknown,
+  auth = true,
+) {
+  return request<TResponse>(path, {
+    method: "PATCH",
+    body: JSON.stringify(body),
+    auth,
+  });
+}
+
+export async function deleteJson<TResponse>(path: string, auth = true) {
+  return request<TResponse>(path, {
+    method: "DELETE",
+    auth,
+  });
+}
+
+export async function postFormData<TResponse>(
+  path: string,
+  body: FormData,
+  auth = true,
+) {
+  return request<TResponse>(path, {
+    method: "POST",
+    body,
+    auth,
+    isFormData: true,
+  });
+}
+
+export async function patchFormData<TResponse>(
+  path: string,
+  body: FormData,
+  auth = true,
+) {
+  return request<TResponse>(path, {
+    method: "PATCH",
+    body,
+    auth,
+    isFormData: true,
+  });
 }

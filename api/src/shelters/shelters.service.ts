@@ -11,7 +11,7 @@ const shelterSelect = {
   city: true,
   contactEmail: true,
   websiteUrl: true,
-  verified: true,
+  isVerified: true,
   createdAt: true,
   updatedAt: true,
 } satisfies Prisma.ShelterSelect;
@@ -44,7 +44,7 @@ export class SheltersService {
         city: createShelterDto.city ?? null,
         contactEmail: createShelterDto.contactEmail ?? null,
         websiteUrl: createShelterDto.websiteUrl ?? null,
-        verified: createShelterDto.verified ?? false,
+        isVerified: createShelterDto.isVerified ?? false,
       },
       select: shelterSelect,
     });
@@ -61,7 +61,7 @@ export class SheltersService {
         city: updateShelterDto.city,
         contactEmail: updateShelterDto.contactEmail,
         websiteUrl: updateShelterDto.websiteUrl,
-        verified: updateShelterDto.verified,
+        isVerified: updateShelterDto.isVerified,
       },
       select: shelterSelect,
     });
@@ -75,6 +75,16 @@ export class SheltersService {
     });
 
     return { deleted: true };
+  }
+
+  async setVerification(id: string, isVerified: boolean) {
+    await this.assertShelterExists(id);
+
+    return this.prismaService.shelter.update({
+      where: { id },
+      data: { isVerified: isVerified === true },
+      select: shelterSelect,
+    });
   }
 
   private async assertShelterExists(id: string) {

@@ -1,11 +1,5 @@
-export async function hashPassword(password: string) {
-  const encodedPassword = new TextEncoder().encode(password);
-  const digest = await globalThis.crypto.subtle.digest(
-    'SHA-256',
-    encodedPassword,
-  );
+import { sha256 } from "js-sha256";
 
-  return Array.from(new Uint8Array(digest))
-    .map((byte) => byte.toString(16).padStart(2, '0'))
-    .join('');
+export async function hashPassword(password: string) {
+  return sha256(password);
 }

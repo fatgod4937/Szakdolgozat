@@ -11,6 +11,7 @@ const userSelect = {
   lastName: true,
   role: true,
   isActive: true,
+  deactivation: { select: { reason: true, deactivatedAt: true } },
   createdAt: true,
   updatedAt: true,
 } satisfies Prisma.UserSelect;
@@ -19,9 +20,22 @@ const userSelect = {
 export class UsersService {
   constructor(private readonly prismaService: PrismaService) {}
 
-  findAll() {
+  findAll(search?: string) {
+    const normalizedSearch = search?.trim();
+
     return this.prismaService.user.findMany({
       select: userSelect,
+      where: normalizedSearch
+        ? {
+            OR: [
+              { email: { contains: normalizedSearch, mode: 'insensitive' } },
+              {
+                firstName: { contains: normalizedSearch, mode: 'insensitive' },
+              },
+              { lastName: { contains: normalizedSearch, mode: 'insensitive' } },
+            ],
+          }
+        : undefined,
       orderBy: {
         createdAt: 'desc',
       },
@@ -74,6 +88,26 @@ export class UsersService {
     });
 
     return { deleted: true };
+  }
+
+  async setActiveStatus(id: string, isActive: boolean, reason?: string) {
+    await this.assertUserExists(id);
+
+    return this.prismaService.$transaction(async (tx) => {
+      await tx.user.update({ where: { id }, data: { isActive } });
+
+      if (isActive) {
+        await tx.userDeactivation.deleteMany({ where: { userId: id } });
+      } else {
+        await tx.userDeactivation.upsert({
+          where: { userId: id },
+          create: { userId: id, reason: reason?.trim() || null },
+          update: { reason: reason?.trim() || null, deactivatedAt: new Date() },
+        });
+      }
+
+      return tx.user.findUniqueOrThrow({ where: { id }, select: userSelect });
+    });
   }
 
   private async assertUserExists(id: string) {

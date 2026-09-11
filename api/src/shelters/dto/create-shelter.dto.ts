@@ -4,5 +4,5 @@ export class CreateShelterDto {
   city?: string | null;
   contactEmail?: string | null;
   websiteUrl?: string | null;
-  verified?: boolean;
+  isVerified?: boolean;
 }

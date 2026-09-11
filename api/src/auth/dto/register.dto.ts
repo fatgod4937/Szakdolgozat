@@ -8,7 +8,9 @@ export class RegisterDto {
   passwordHash?: string;
   firstName: string;
   lastName: string;
+  acceptDataSafety?: boolean;
   accountType?: 'user' | 'shelter';
   role?: PublicUserRole;
   shelterName?: string;
+  phoneNumber?: string;
 }

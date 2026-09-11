@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 import AuthLoginForm, {
   type LoginFormValues,
@@ -10,40 +10,93 @@ import AuthRegisterForm, {
   type RegisterFormValues,
 } from "./components/AuthRegisterForm";
 import { hashPassword } from "../utils/hash-password";
-import { setAuthTokens } from "../utils/token-storage";
+import { getCurrentUserId, setAuthTokens } from "../utils/token-storage";
 import { showError, showSuccess } from "../utils/notification";
 import { login, type AuthResponse, register } from "../utils/auth-api";
+import {
+  createChatKeyBackup,
+  getOrCreateChatDevice,
+  getPublicChatDevice,
+  restoreChatKeyBackup,
+} from "../utils/chat-crypto";
+import {
+  getChatKeyBackup,
+  registerChatDevice,
+  saveChatKeyBackup,
+} from "../utils/chat-api";
+import { useTranslation } from "react-i18next";
 
 type AuthMode = "login" | "register";
 
-const authHighlights = [
-  "Gyors belépés meglévő fiókkal.",
-  "Egyszerű regisztráció új felhasználóknak.",
-  "A backend hitelesítés később ide kapcsolható.",
-];
-
 export default function AuthPage() {
-  const [mode, setMode] = useState<AuthMode>("login");
+  const [searchParams] = useSearchParams();
+  const [mode, setMode] = useState<AuthMode>(() =>
+    searchParams.get("mode") === "register" ? "register" : "login",
+  );
   const [loginSubmitError, setLoginSubmitError] = useState<string | null>(null);
   const [registerSubmitError, setRegisterSubmitError] = useState<string | null>(
     null,
   );
   const navigate = useNavigate();
+  const { t } = useTranslation();
+  const authHighlights = [
+    t("auth.highlightLogin"),
+    t("auth.highlightRegister"),
+  ];
+
+  const registerCurrentChatDevice = async (password: string) => {
+    const userId = getCurrentUserId();
+
+    if (!userId) {
+      return;
+    }
+
+    const { backup } = await getChatKeyBackup();
+    const device = backup
+      ? restoreChatKeyBackup(userId, password, backup)
+      : getOrCreateChatDevice(userId);
+
+    if (!device) {
+      throw new Error("Unable to restore the encrypted chat key.");
+    }
+
+    if (!backup) {
+      await saveChatKeyBackup(createChatKeyBackup(device, password));
+    }
+
+    await registerChatDevice(getPublicChatDevice(device));
+  };
+
   const loginMutation = useMutation<AuthResponse, Error, LoginFormValues>({
     mutationFn: async (values) =>
       login({
         email: values.email,
         passwordHash: await hashPassword(values.password),
       }),
-    onSuccess: (data) => {
+    onSuccess: async (data, values) => {
       if (data.accessToken && data.refreshToken) {
         setAuthTokens(data.accessToken, data.refreshToken);
+        await registerCurrentChatDevice(values.password);
       }
 
-      showSuccess("Login successful.");
+      showSuccess(t("auth.loginSuccess"));
       navigate("/pets");
     },
     onError: (error) => {
+      if (error.message === "Please verify your account.") {
+        navigate("/email-verification-pending", {
+          state: { email: loginMutation.variables?.email },
+        });
+        return;
+      }
+
+      if (error.message === "ACCOUNT_DEACTIVATED") {
+        navigate(
+          `/account-deactivated?email=${encodeURIComponent(loginMutation.variables?.email ?? "")}`,
+        );
+        return;
+      }
+
       setLoginSubmitError(error.message);
       showError(error.message);
     },
@@ -57,14 +110,12 @@ export default function AuthPage() {
           passwordHash: await hashPassword(values.password),
           firstName: values.firstName,
           lastName: values.lastName,
+          phoneNumber: values.phoneNumber,
+          acceptDataSafety: values.acceptTerms,
         }),
-      onSuccess: (data) => {
-        if (data.accessToken && data.refreshToken) {
-          setAuthTokens(data.accessToken, data.refreshToken);
-        }
-
-        showSuccess("Registration successful.");
-        navigate("/pets");
+      onSuccess: () => {
+        setMode("login");
+        showSuccess(t("auth.registrationSuccess"));
       },
       onError: (error) => {
         setRegisterSubmitError(error.message);
@@ -96,17 +147,16 @@ export default function AuthPage() {
       <div className="mx-auto flex min-h-[calc(100vh-6rem)] w-full max-w-7xl flex-col justify-center px-6 py-12 lg:flex-row lg:items-center lg:px-12">
         <div className="max-w-xl space-y-6">
           <span className="inline-flex rounded-full border border-black/10 bg-white/70 px-4 py-2 text-sm font-medium shadow-sm backdrop-blur">
-            Fiókkezelés
+            {t("auth.account")}
           </span>
           <h1 className="text-4xl font-semibold tracking-tight text-black sm:text-5xl">
-            Jelentkezz be, vagy hozz létre egy új örökbefogadói profilt.
+            {t("auth.title")}
           </h1>
           <p className="max-w-lg text-base leading-7 text-black/70">
-            A felület később a valós backendhez kapcsolódik, de már most
-            ugyanazt a puha, tiszta vizuális nyelvet használja, mint a főoldal.
+            {t("auth.description")}
           </p>
 
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-2">
             {authHighlights.map((item) => (
               <div
                 key={item}
@@ -131,7 +181,7 @@ export default function AuthPage() {
                   mode === "login" ? activeButtonClass : inactiveButtonClass
                 }
               >
-                Bejelentkezés
+                {t("auth.login")}
               </button>
               <button
                 type="button"
@@ -143,7 +193,7 @@ export default function AuthPage() {
                   mode === "register" ? activeButtonClass : inactiveButtonClass
                 }
               >
-                Regisztráció
+                {t("auth.register")}
               </button>
             </div>
 

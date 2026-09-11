@@ -84,9 +84,8 @@ Feladatok:
 - Felhasználói rendszer (regisztráció, bejelentkezés, JWT alapú autentikáció) ✅
 - Alap entitások létrehozása (felhasználók, menhelyek) ✅
 - Alap CRUD API-k implementálása ✅
-- Redis integráció (session/cache alapok) ❌
 
-**Eredmény:** működő backend alapfunkciókkal ❌
+**Eredmény:** működő backend alapfunkciókkal ✅
 
 ---
 
@@ -97,9 +96,8 @@ Feladatok:
 A rendszer központi funkcionalitásának fejlesztése.  
 Feladatok:
 
-- Állatok kezelésének implementálása (CRUD, képek, adatok) ❌
-- Swipe alapú böngészési logika kialakítása ❌
-- Kedvencek rendszer implementálása (többlépcsős logika) ❌
+- Állatok kezelésének implementálása (CRUD, képek, adatok) ✅
+- Kedvencek rendszer implementálása ✅
 - Alap keresési és szűrési funkciók ❌
 - Backend oldali preferencia- és szűrési logika ❌
 
@@ -114,7 +112,7 @@ Feladatok:
 Komplexebb funkciók és integrációk megvalósítása.  
 Feladatok:
 
-- Valós idejű chat rendszer implementálása (Socket.IO) ❌
+- Valós idejű chat rendszer implementálása (Socket.IO) ✅
 - Push értesítések bevezetése (Firebase Cloud Messaging) ❌
 - Felhasználó-azonosítás külső API-val ❌
 - Adományozási rendszer integrálása (Patreon vagy Stripe) ❌
@@ -133,8 +131,8 @@ A felhasználói felület és a backend integrációja.
 Feladatok:
 
 - React alapú PWA alkalmazás fejlesztése ❌
-- UI/UX kialakítása (swipe felület, profilok, listák) ❌
-- API integráció a backenddel ❌
+- UI/UX kialakítása (profilok, listák) ✅
+- API integráció a backenddel ✅
 - Chat és értesítések frontend oldali kezelése ❌
 - Reszponzív működés biztosítása ❌
 

@@ -2,6 +2,7 @@ export const AUTH_TOKEN_KEY = "floofs_access_token";
 export const REFRESH_TOKEN_KEY = "floofs_refresh_token";
 
 type JwtPayload = {
+  sub?: string;
   exp?: number;
 };
 
@@ -37,25 +38,9 @@ export function getRefreshToken() {
   return localStorage.getItem(REFRESH_TOKEN_KEY);
 }
 
-export function setAccessToken(token: string) {
-  localStorage.setItem(AUTH_TOKEN_KEY, token);
-  window.dispatchEvent(new Event("floofs-auth-changed"));
-}
-
-export function setRefreshToken(token: string) {
-  localStorage.setItem(REFRESH_TOKEN_KEY, token);
-  window.dispatchEvent(new Event("floofs-auth-changed"));
-}
-
 export function setAuthTokens(accessToken: string, refreshToken: string) {
   localStorage.setItem(AUTH_TOKEN_KEY, accessToken);
   localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
-  window.dispatchEvent(new Event("floofs-auth-changed"));
-}
-
-export function clearAccessToken() {
-  localStorage.removeItem(AUTH_TOKEN_KEY);
-  localStorage.removeItem(REFRESH_TOKEN_KEY);
   window.dispatchEvent(new Event("floofs-auth-changed"));
 }
 
@@ -63,10 +48,6 @@ export function clearAuthTokens() {
   localStorage.removeItem(AUTH_TOKEN_KEY);
   localStorage.removeItem(REFRESH_TOKEN_KEY);
   window.dispatchEvent(new Event("floofs-auth-changed"));
-}
-
-export function hasAccessToken() {
-  return Boolean(getAccessToken());
 }
 
 export function hasValidAccessToken(token = getAccessToken()) {
@@ -83,8 +64,16 @@ export function hasValidAccessToken(token = getAccessToken()) {
   return payload.exp * 1000 > Date.now();
 }
 
-export function getAccessTokenExpiry(token = getAccessToken()) {
-  const payload = decodeJwtPayload(token);
+export function getCurrentUserId(token = getAccessToken()) {
+  if (!token) {
+    return null;
+  }
+
+  return decodeJwtPayload(token)?.sub ?? null;
+}
+
+export function getAccessTokenExpiry(token: string | null = getAccessToken()) {
+  const payload = decodeJwtPayload(token ?? "");
 
   if (!payload?.exp) {
     return null;

@@ -1,6 +1,11 @@
 "use client";
 
 import { useForm } from "react-hook-form";
+import { Link } from "react-router-dom";
+import NotificationBanner from "../../components/NotificationBanner/NotificationBanner";
+import { useEffect, useState } from "react";
+import { showError } from "../../utils/notification";
+import { useTranslation } from "react-i18next";
 
 export type LoginFormValues = {
   email: string;
@@ -19,6 +24,7 @@ export default function AuthLoginForm({
   onSubmit,
   submitError,
 }: AuthLoginFormProps) {
+  const { t } = useTranslation();
   const loginForm = useForm<LoginFormValues>({
     mode: "onBlur",
     reValidateMode: "onChange",
@@ -28,65 +34,75 @@ export default function AuthLoginForm({
     },
   });
 
-  const submitHandler = loginForm.handleSubmit(onSubmit);
+  useEffect(() => {
+    if (submitError) {
+      showError(submitError);
+    }
+  }, [submitError]);
+  const submitHandler = loginForm.handleSubmit(onSubmit, (errors) => {
+    const message =
+      errors.email?.message ??
+      errors.password?.message ??
+      t("auth.checkFields");
+
+    showError(message);
+  });
 
   return (
     <form className="mt-8 space-y-4" onSubmit={submitHandler} noValidate>
       <label className="block space-y-2">
-        <span className="text-sm font-medium text-black/70">E-mail</span>
+        <span className="text-sm font-medium text-black/70">
+          {t("auth.email")}
+        </span>
         <input
           type="email"
-          placeholder="valami@pelda.hu"
+          placeholder="name@example.com"
           className={inputClassName}
           aria-invalid={Boolean(loginForm.formState.errors.email)}
           {...loginForm.register("email", {
-            required: "Az e-mail mező kötelező.",
+            required: t("auth.emailRequired"),
             pattern: {
               value: /\S+@\S+\.\S+/,
-              message: "Adj meg egy érvényes e-mail címet.",
+              message: t("auth.emailInvalid"),
             },
           })}
         />
-        {loginForm.formState.errors.email ? (
-          <span className="text-sm text-[#b45309]">
-            {loginForm.formState.errors.email.message}
-          </span>
-        ) : null}
       </label>
 
       <label className="block space-y-2">
-        <span className="text-sm font-medium text-black/70">Jelszó</span>
+        <span className="text-sm font-medium text-black/70">
+          {t("auth.password")}
+        </span>
         <input
           type="password"
           placeholder="••••••••"
           className={inputClassName}
           aria-invalid={Boolean(loginForm.formState.errors.password)}
           {...loginForm.register("password", {
-            required: "A jelszó mező kötelező.",
+            required: t("auth.passwordRequired"),
             minLength: {
               value: 6,
-              message: "A jelszó legalább 6 karakter hosszú legyen.",
+              message: t("auth.passwordMin", { count: 6 }),
             },
           })}
         />
-        {loginForm.formState.errors.password ? (
-          <span className="text-sm text-[#b45309]">
-            {loginForm.formState.errors.password.message}
-          </span>
-        ) : null}
       </label>
-
-      {submitError ? (
-        <p className="text-sm text-[#b45309]">{submitError}</p>
-      ) : null}
 
       <button
         type="submit"
         className="w-full rounded-2xl bg-[#fec8e9] px-5 py-3 text-sm font-semibold text-black shadow-[0_18px_40px_rgba(254,200,233,0.45)] transition hover:translate-y-[-1px] hover:bg-[#ffb9df] disabled:cursor-not-allowed disabled:opacity-70"
         disabled={loginForm.formState.isSubmitting}
       >
-        {loginForm.formState.isSubmitting ? "Belépés..." : "Bejelentkezés"}
+        {loginForm.formState.isSubmitting
+          ? t("auth.loggingIn")
+          : t("auth.login")}
       </button>
+      <Link
+        to="/forgot-password"
+        className="block text-center text-sm font-medium text-black/65 underline decoration-black/25 underline-offset-4 transition hover:text-black"
+      >
+        {t("passwordReset.forgotPassword")}
+      </Link>
     </form>
   );
 }
