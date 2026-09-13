@@ -1,0 +1,5 @@
+ALTER TABLE "users"
+    ADD COLUMN "bio" TEXT,
+    ADD COLUMN "location" TEXT,
+    ADD COLUMN "latitude" DOUBLE PRECISION,
+    ADD COLUMN "longitude" DOUBLE PRECISION;

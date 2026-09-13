@@ -1,12 +1,13 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
+import "./i18n";
 import "./globals.css";
 import { registerSW } from "virtual:pwa-register";
-import Navbar from "./components/Navbar/Navbar";
-import Footer from "./components/Footer/Footer";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 const rootElement = document.getElementById("root");
+const queryClient = new QueryClient();
 
 if (!rootElement) {
   throw new Error('Root element with id "root" was not found.');
@@ -14,14 +15,10 @@ if (!rootElement) {
 
 ReactDOM.createRoot(rootElement).render(
   <React.StrictMode>
-    <Navbar />
-    <App />
-    <Footer />
+    <QueryClientProvider client={queryClient}>
+      <App />
+    </QueryClientProvider>
   </React.StrictMode>,
 );
 
 registerSW({ immediate: true });
-
-if (import.meta.env.PROD) {
-  registerSW({ immediate: true });
-}

@@ -1,32 +1,15 @@
 import { useState } from "react";
-
-
-
-const faqs = [
-  {
-    icon: "❤️",
-    question: "Hogyan fogadhatok örökbe állatot?",
-    answer: "Hogy nelkul",
-  },
-  {
-    icon: "❤️",
-    question: "Mennyibe kerül az örökbefogadás?",
-    answer: "vegtelen forintba",
-  },
-  {
-    icon: "❤️",
-    question: "Jó kezekbe kerülnek az állatok?",
-    answer: "remelem",
-  },
-  {
-    icon: "❤️",
-    question: "Nem találom meg a megfelelő állatot?",
-    answer: "://",
-  },
-];
+import { useTranslation } from "react-i18next";
 
 export default function Faq() {
   const [openIndex, setOpenIndex] = useState<number>(-1);
+  const { t } = useTranslation();
+  const faqs = [
+    ["actions.adopt", "actions.adoptAnswer"],
+    ["home.faqCost", "home.faqCostAnswer"],
+    ["home.faqSafety", "home.faqSafetyAnswer"],
+    ["home.faqNoMatch", "home.faqNoMatchAnswer"],
+  ];
 
   const toggleFAQ = (index: number) => {
     setOpenIndex(openIndex == index ? -1 : index);
@@ -45,20 +28,18 @@ export default function Faq() {
         </div>
         <div className="flex flex-col w-1/2">
           <h2 className="text-2xl font-bold text-justify ">
-            Gyakran Ismételt Kérdések
+            {t("home.faqTitle")}
           </h2>
-          <p className="text-gray-600 mb-4">
-            Itt válaszokat találsz a leggyakrabban felmerülő kérdésekre.
-          </p>
+          <p className="text-gray-600 mb-4">{t("home.faqDescription")}</p>
           <div className="space-y-4">
-            {faqs.map((faq, index) => (
+            {faqs.map(([question, answer], index) => (
               <div key={index} className="border border-gray-300 rounded-lg">
                 <button
                   className="flex justify-between items-start text-start w-full p-4 hover:bg-gray-50"
                   onClick={() => toggleFAQ(index)}
                 >
                   <span className={`text-[0.9rem] font-semibold pr-2`}>
-                    {faq.icon} {faq.question}
+                    {t(question)}
                   </span>
                   {openIndex == index ? (
                     <span className="text-lg text-[0.9rem]">-</span>
@@ -73,9 +54,7 @@ export default function Faq() {
                       : "opacity-0 invisible max-h-0 p-0"
                   }`}
                 >
-                  <div className="text-gray-600 text-[0.9rem]">
-                    {faq.answer}
-                  </div>
+                  <div className="text-gray-600 text-[0.9rem]">{t(answer)}</div>
                 </div>
               </div>
             ))}
