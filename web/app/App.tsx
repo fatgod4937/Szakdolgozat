@@ -6,7 +6,7 @@ import AdminPage from "./admin/page";
 import AuthPage from "./auth/page";
 import PetChatPage from "./chat/page";
 import ChatsPage from "./chats/page";
-import DownloadPage from "./Download/page";
+import DownloadPage from "./download/page";
 import MyListingsPage from "./my-listings/page";
 import FavoritesPage from "./favorites/page";
 import PetsBrowsePage from "./petsasd/page";
