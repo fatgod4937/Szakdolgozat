@@ -123,5 +123,7 @@ jobs:
             export API_IMAGE='${{ needs.publish.outputs.api-image }}'
             export WEB_IMAGE='${{ needs.publish.outputs.web-image }}'
             docker compose --env-file .env -f compose.production.yml pull
+            docker compose --env-file .env -f compose.production.yml up -d --wait db redis
+            docker compose --env-file .env -f compose.production.yml run --rm --no-deps api npx prisma migrate deploy
             docker compose --env-file .env -f compose.production.yml up -d --remove-orphans
             docker image prune -f
