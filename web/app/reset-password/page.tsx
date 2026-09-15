@@ -5,6 +5,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import PasswordStrengthMeter from "../components/PasswordStrengthMeter";
 import { resetPassword } from "../utils/auth-api";
 import { hashPassword } from "../utils/hash-password";
 
@@ -18,6 +19,7 @@ export default function ResetPasswordPage() {
   const form = useForm<ResetPasswordValues>({
     defaultValues: { password: "", confirmPassword: "" },
   });
+  const password = form.watch("password");
   const mutation = useMutation({
     mutationFn: async (values: ResetPasswordValues) =>
       resetPassword({
@@ -68,6 +70,7 @@ export default function ResetPasswordPage() {
                 {...form.register("password", { required: true, minLength: 6 })}
               />
             </label>
+            <PasswordStrengthMeter password={password} />
             <label className="block space-y-2">
               <span className="text-sm font-medium text-black/70">
                 {t("settings.confirmPassword")}

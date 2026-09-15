@@ -1,8 +1,11 @@
 "use client";
 
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import HungarianPhoneNumberInput from "../../components/HungarianPhoneNumberInput";
+import PasswordStrengthMeter from "../../components/PasswordStrengthMeter";
+import { isValidHungarianPhoneNumber } from "../../utils/hungarian-phone-number";
 
 export type RegisterFormValues = {
   firstName: string;
@@ -79,20 +82,30 @@ export default function AuthRegisterForm({ onSubmit, submitError }: Props) {
           })}
         />
       </Field>
+      <PasswordStrengthMeter password={password} />
       <Field
         label={t("auth.phoneNumber")}
         hint={t("auth.phoneHint")}
         error={form.formState.errors.phoneNumber?.message}
       >
-        <input
-          type="tel"
-          className={inputClassName}
-          {...form.register("phoneNumber", {
+        <Controller
+          control={form.control}
+          name="phoneNumber"
+          rules={{
             validate: (value) =>
               !value ||
-              /^[+()\d\s-]{6,30}$/.test(value) ||
+              isValidHungarianPhoneNumber(value) ||
               t("auth.phoneInvalid"),
-          })}
+          }}
+          render={({ field }) => (
+            <HungarianPhoneNumberInput
+              name={field.name}
+              value={field.value}
+              onBlur={field.onBlur}
+              onChange={field.onChange}
+              aria-label={t("auth.phoneNumber")}
+            />
+          )}
         />
       </Field>
       <Field

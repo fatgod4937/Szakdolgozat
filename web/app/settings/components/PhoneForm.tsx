@@ -1,9 +1,8 @@
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  inputClassName,
-  primaryButtonClassName,
-  SettingsField,
-} from "./form-primitives";
+import HungarianPhoneNumberInput from "../../components/HungarianPhoneNumberInput";
+import { isValidHungarianPhoneNumber } from "../../utils/hungarian-phone-number";
+import { primaryButtonClassName, SettingsField } from "./form-primitives";
 
 type Props = {
   phoneNumber: string;
@@ -19,23 +18,35 @@ export default function PhoneForm({
   onSubmit,
 }: Props) {
   const { t } = useTranslation();
+  const [phoneNumberError, setPhoneNumberError] = useState<string | null>(null);
+
   return (
     <form
       className="mt-6 space-y-5"
       onSubmit={(event) => {
         event.preventDefault();
+        if (phoneNumber && !isValidHungarianPhoneNumber(phoneNumber)) {
+          setPhoneNumberError(t("auth.phoneInvalid"));
+          return;
+        }
+
+        setPhoneNumberError(null);
         onSubmit();
       }}
     >
       <SettingsField label={t("settings.phoneNumber")}>
-        <input
-          type="tel"
+        <HungarianPhoneNumberInput
           value={phoneNumber}
-          onChange={(event) => onPhoneNumberChange(event.target.value)}
-          className={inputClassName}
-          placeholder="+36 30 123 4567"
+          onChange={(value) => {
+            setPhoneNumberError(null);
+            onPhoneNumberChange(value);
+          }}
+          aria-label={t("settings.phoneNumber")}
         />
       </SettingsField>
+      {phoneNumberError ? (
+        <p className="text-sm text-[#b45309]">{phoneNumberError}</p>
+      ) : null}
       <p className="text-sm text-black/60">{t("settings.clearPhone")}</p>
       <button
         type="submit"

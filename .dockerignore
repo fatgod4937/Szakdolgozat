@@ -1,0 +1,9 @@
+*
+!api/
+!api/**
+!web/
+web/*
+!web/public/
+web/public/*
+!web/public/images/
+!web/public/images/logo.png

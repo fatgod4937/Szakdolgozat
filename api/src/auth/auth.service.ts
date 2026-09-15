@@ -498,14 +498,17 @@ export class AuthService {
   }
 
   private normalizePhoneNumber(phoneNumber?: string) {
-    const normalizedPhoneNumber = phoneNumber?.trim();
-    if (
-      normalizedPhoneNumber &&
-      !/^[+()\d\s-]{6,30}$/.test(normalizedPhoneNumber)
-    ) {
-      throw new BadRequestException('Provide a valid phone number.');
+    const compactPhoneNumber = phoneNumber?.trim().replace(/[\s-]/g, '');
+
+    if (!compactPhoneNumber) {
+      return null;
     }
-    return normalizedPhoneNumber || null;
+
+    if (!/^\+36\d{9}$/.test(compactPhoneNumber)) {
+      throw new BadRequestException('Provide a valid Hungarian phone number.');
+    }
+
+    return compactPhoneNumber;
   }
 
   private async saveProfilePicture(buffer: Buffer, extension: string) {
@@ -560,7 +563,7 @@ export class AuthService {
     try {
       const resend = new Resend(apiKey);
       const logoContent = await readFile(
-        resolve(process.cwd(), '..', 'web', 'public', 'images', 'logo.png'),
+        resolve(process.cwd(), 'assets', 'logo.png'),
       );
       const { error } = await resend.emails.send({
         from,
