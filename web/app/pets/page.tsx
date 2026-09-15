@@ -5,6 +5,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { showError, showSuccess } from "../utils/notification";
+import { compressImage } from "../utils/image-compression";
 import {
   createPet,
   getPet,
@@ -329,7 +330,9 @@ export default function PetsCreatePage() {
     },
   });
 
-  const handleSelectPhotos = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSelectPhotos = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     const files = Array.from(event.target.files ?? []);
     event.target.value = "";
 
@@ -348,12 +351,19 @@ export default function PetsCreatePage() {
     const acceptedFiles = files.slice(0, remainingSlots);
     const rejectedCount = files.length - acceptedFiles.length;
 
-    setSelectedPhotos((current) => [...current, ...acceptedFiles]);
-    setPhotoError(
-      rejectedCount > 0
-        ? t("petForm.remainingPhotos", { count: remainingSlots })
-        : null,
-    );
+    try {
+      const compressedFiles = await Promise.all(
+        acceptedFiles.map(compressImage),
+      );
+      setSelectedPhotos((current) => [...current, ...compressedFiles]);
+      setPhotoError(
+        rejectedCount > 0
+          ? t("petForm.remainingPhotos", { count: remainingSlots })
+          : null,
+      );
+    } catch {
+      setPhotoError("Could not prepare one or more images.");
+    }
   };
 
   const removePhoto = (index: number) => {

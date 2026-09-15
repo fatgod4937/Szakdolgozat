@@ -564,7 +564,7 @@ export class AuthService {
       );
       const { error } = await resend.emails.send({
         from,
-        to: 'gibonakos196@gmail.com',
+        to: email,
         subject: 'Verify your Floofs account',
         html: this.buildVerificationEmailHtml(firstName, verificationUrl),
         attachments: [

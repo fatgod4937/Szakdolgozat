@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type DragEvent } from "react";
 import { useTranslation } from "react-i18next";
+import { compressImage } from "../../utils/image-compression";
 import { showError } from "../../utils/notification";
 
 type Props = {
@@ -33,18 +34,22 @@ export default function PictureForm({
     },
     [selectedPictureUrl],
   );
-  const selectPicture = (file?: File) => {
+  const selectPicture = async (file?: File) => {
     if (!file) return;
     if (!file.type.startsWith("image/")) {
       showError(t("settings.profilePictureInvalid"));
       return;
     }
-    setProfilePicture(file);
+    try {
+      setProfilePicture(await compressImage(file));
+    } catch {
+      showError(t("settings.profilePictureInvalid"));
+    }
   };
   const handleDrop = (event: DragEvent<HTMLButtonElement>) => {
     event.preventDefault();
     setIsDropTarget(false);
-    selectPicture(event.dataTransfer.files[0]);
+    void selectPicture(event.dataTransfer.files[0]);
   };
   return (
     <div className="mt-7 grid gap-8 lg:grid-cols-2">
@@ -78,7 +83,7 @@ export default function PictureForm({
           type="file"
           accept="image/*"
           className="sr-only"
-          onChange={(event) => selectPicture(event.target.files?.[0])}
+          onChange={(event) => void selectPicture(event.target.files?.[0])}
         />
         <button
           type="button"
