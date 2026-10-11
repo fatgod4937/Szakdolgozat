@@ -15,7 +15,7 @@ export default function FavoritesPage() {
   const favorites = favoritesQuery.data ?? [];
 
   return (
-    <section className="min-h-screen bg-[#fffdf9] px-4 pb-20 pt-28 sm:px-6 lg:px-10">
+    <section className="min-h-screen bg-[#fffdf9] px-4 pb-20 [padding-top:calc(5rem+env(safe-area-inset-top))] sm:px-6 sm:[padding-top:6rem] lg:px-10">
       <div className="mx-auto max-w-7xl">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>

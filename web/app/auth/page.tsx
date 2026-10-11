@@ -140,7 +140,7 @@ export default function AuthPage() {
     "rounded-full px-5 py-2 text-sm font-medium transition bg-black/5 text-black/60 hover:bg-black/10";
 
   return (
-    <section className="relative overflow-hidden bg-gradient-to-b from-[#fffdf9] via-white to-[#fff3e8] pt-12 pb-12">
+    <section className="relative overflow-hidden bg-gradient-to-b from-[#fffdf9] via-white to-[#fff3e8] [padding-top:calc(5rem+env(safe-area-inset-top))] pb-12 sm:[padding-top:6rem]">
       <div className="absolute left-[-6rem] top-24 h-56 w-56 rounded-full bg-[#fec8e9]/35 blur-3xl" />
       <div className="absolute right-[-4rem] top-40 h-72 w-72 rounded-full bg-[#ffd8b0]/40 blur-3xl" />
 

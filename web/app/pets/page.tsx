@@ -471,7 +471,7 @@ export default function PetsCreatePage() {
   });
 
   return (
-    <section className="relative overflow-hidden bg-[radial-gradient(circle_at_top_left,_rgba(254,200,233,0.28),_transparent_34%),radial-gradient(circle_at_85%_10%,_rgba(255,216,176,0.32),_transparent_30%),linear-gradient(180deg,_#fffdf9_0%,_#fff7ef_100%)] px-4 pb-16 pt-28 sm:px-6 lg:px-10">
+    <section className="relative overflow-hidden bg-[radial-gradient(circle_at_top_left,_rgba(254,200,233,0.28),_transparent_34%),radial-gradient(circle_at_85%_10%,_rgba(255,216,176,0.32),_transparent_30%),linear-gradient(180deg,_#fffdf9_0%,_#fff7ef_100%)] px-4 pb-16 [padding-top:calc(5rem+env(safe-area-inset-top))] sm:px-6 sm:[padding-top:6rem] lg:px-10">
       <Link
         to="/pets"
         className="absolute right-6 top-6 rounded-full border border-black/10 bg-white/80 px-4 py-2 text-sm font-medium text-black shadow-sm backdrop-blur transition hover:bg-white"

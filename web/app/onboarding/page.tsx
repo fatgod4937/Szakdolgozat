@@ -67,7 +67,7 @@ export default function OnboardingPage() {
   });
   if (userQuery.isLoading || !userQuery.data) return null;
   return (
-    <section className="min-h-screen bg-[#fffdf9] px-4 pb-20 pt-28 sm:px-6">
+    <section className="min-h-screen bg-[#fffdf9] px-4 pb-20 [padding-top:calc(5rem+env(safe-area-inset-top))] sm:px-6 sm:[padding-top:6rem]">
       <div className="mx-auto max-w-3xl">
         <p className="text-sm font-semibold uppercase tracking-wide text-[#aa2f75]">
           {t("onboarding.eyebrow")}

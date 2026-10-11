@@ -5,7 +5,7 @@ export default function DataSafetyPage() {
   const sections = ["account", "data", "security", "choices"] as const;
 
   return (
-    <section className="min-h-screen bg-[#fffdf9] px-4 pb-20 pt-28 sm:px-6 lg:px-10">
+    <section className="min-h-screen bg-[#fffdf9] px-4 pb-20 [padding-top:calc(5rem+env(safe-area-inset-top))] sm:px-6 sm:[padding-top:6rem] lg:px-10">
       <article className="mx-auto max-w-3xl border-t-2 border-[#fec8e9] pt-6">
         <p className="text-sm font-semibold uppercase tracking-wide text-[#aa2f75]">
           {t("dataSafety.eyebrow")}

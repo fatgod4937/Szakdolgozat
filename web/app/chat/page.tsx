@@ -384,7 +384,7 @@ export default function PetChatPage() {
 
   if (conversationQuery.isLoading) {
     return (
-      <section className="min-h-screen bg-gradient-to-b from-[#fffdf9] via-white to-[#fef8f4] px-6 pb-12 pt-32">
+      <section className="min-h-screen bg-gradient-to-b from-[#fffdf9] via-white to-[#fef8f4] px-6 pb-12 [padding-top:calc(5rem+env(safe-area-inset-top))] sm:[padding-top:6rem]">
         <div className="mx-auto max-w-3xl rounded-[2rem] border border-black/10 bg-white/90 p-8 text-sm text-black/60 shadow-sm">
           {t("chat.loading")}
         </div>
@@ -394,7 +394,7 @@ export default function PetChatPage() {
 
   if (conversationQuery.isError) {
     return (
-      <section className="min-h-screen bg-gradient-to-b from-[#fffdf9] via-white to-[#fef8f4] px-6 pt-28">
+      <section className="min-h-screen bg-gradient-to-b from-[#fffdf9] via-white to-[#fef8f4] px-6 [padding-top:calc(5rem+env(safe-area-inset-top))] sm:[padding-top:6rem]">
         <div className="mx-auto max-w-3xl rounded-[2rem] border border-black/10 bg-white/90 p-8 shadow-sm">
           <p className="text-sm uppercase tracking-[0.25em] text-black/45">
             {t("chat.label")}
@@ -439,7 +439,7 @@ export default function PetChatPage() {
   };
 
   return (
-    <section className="min-h-screen bg-gradient-to-b from-[#fffdf9] via-white to-[#fef8f4] pb-12 pt-32">
+    <section className="min-h-screen bg-gradient-to-b from-[#fffdf9] via-white to-[#fef8f4] pb-12 [padding-top:calc(5rem+env(safe-area-inset-top))] sm:[padding-top:6rem]">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-6 pb-12 lg:px-12">
         <div className="flex flex-wrap items-center justify-between gap-4 rounded-[2rem] border border-black/8 bg-white/80 px-5 py-4 shadow-sm backdrop-blur">
           <div>

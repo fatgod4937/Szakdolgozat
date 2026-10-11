@@ -31,7 +31,7 @@ export default function ResetPasswordPage() {
 
   if (!token) {
     return (
-      <section className="min-h-screen bg-[#fffaf6] px-4 pb-16 pt-28 text-center">
+      <section className="min-h-screen bg-[#fffaf6] px-4 pb-16 [padding-top:calc(5rem+env(safe-area-inset-top))] text-center sm:[padding-top:6rem]">
         <p className="text-sm text-red-700">{t("passwordReset.invalidLink")}</p>
         <Link
           to="/forgot-password"
@@ -44,7 +44,7 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <section className="min-h-screen bg-[#fffaf6] px-4 pb-16 pt-28 sm:px-6">
+    <section className="min-h-screen bg-[#fffaf6] px-4 pb-16 [padding-top:calc(5rem+env(safe-area-inset-top))] sm:px-6 sm:[padding-top:6rem]">
       <div className="mx-auto w-full max-w-md rounded-2xl border border-black/10 bg-white p-6 shadow-sm sm:p-8">
         <h1 className="text-3xl font-semibold text-black">
           {t("passwordReset.resetTitle")}
