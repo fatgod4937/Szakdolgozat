@@ -48,6 +48,8 @@ const safeUserSelect = {
   location: true,
   latitude: true,
   longitude: true,
+  identityVerificationStatus: true,
+  identityVerifiedAt: true,
   deactivation: {
     select: { reason: true, deactivatedAt: true },
   },

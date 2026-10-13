@@ -7,6 +7,7 @@ import { PetsModule } from './pets/pets.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { SheltersModule } from './shelters/shelters.module';
 import { UsersModule } from './users/users.module';
+import { WebhooksModule } from './webhooks/webhooks.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { UsersModule } from './users/users.module';
     UsersModule,
     SheltersModule,
     PetsModule,
+    WebhooksModule,
   ],
 })
 export class AppModule {}

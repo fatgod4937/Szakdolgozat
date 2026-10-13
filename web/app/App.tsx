@@ -51,7 +51,7 @@ function AppContent() {
           <Route
             path="/onboarding"
             element={
-              <RequireAuth>
+              <RequireAuth allowUnverified>
                 <OnboardingPage />
               </RequireAuth>
             }

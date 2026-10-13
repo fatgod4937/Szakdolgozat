@@ -9,12 +9,13 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { IdentityVerificationGuard } from '../auth/identity-verification.guard';
 import { SheltersService } from './shelters.service';
 import { CreateShelterDto } from './dto/create-shelter.dto';
 import { UpdateShelterDto } from './dto/update-shelter.dto';
 
 @Controller('shelters')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, IdentityVerificationGuard)
 export class SheltersController {
   constructor(private readonly sheltersService: SheltersService) {}
 

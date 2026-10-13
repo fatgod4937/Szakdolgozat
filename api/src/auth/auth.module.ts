@@ -6,6 +6,8 @@ import { AdminGuard } from './admin.guard';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
+import { DiditVerificationService } from './didit-verification.service';
+import { IdentityVerificationGuard } from './identity-verification.guard';
 
 @Module({
   imports: [
@@ -24,7 +26,19 @@ import { JwtAuthGuard } from './jwt-auth.guard';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtAuthGuard, AdminGuard],
-  exports: [JwtAuthGuard, AdminGuard, JwtModule],
+  providers: [
+    AuthService,
+    DiditVerificationService,
+    JwtAuthGuard,
+    IdentityVerificationGuard,
+    AdminGuard,
+  ],
+  exports: [
+    DiditVerificationService,
+    JwtAuthGuard,
+    IdentityVerificationGuard,
+    AdminGuard,
+    JwtModule,
+  ],
 })
 export class AuthModule {}

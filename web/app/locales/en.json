@@ -460,9 +460,19 @@
   "onboarding": {
     "eyebrow": "Welcome to Floofs",
     "title": "Complete your profile",
-    "description": "These details are optional. You can add or change them later in Settings.",
+    "description": "Add your profile details while your required identity verification is completed.",
     "details": "About you and your location",
-    "finish": "Start browsing pets"
+    "finish": "Start browsing pets",
+    "identityVerification": {
+      "eyebrow": "Required step",
+      "title": "Verify your identity",
+      "description": "Complete the secure identity check with Didit before you can access Floofs.",
+      "start": "Start identity verification",
+      "starting": "Opening Didit...",
+      "inProgress": "Your verification is in progress. Complete it in Didit, then return here while we confirm the result.",
+      "inReview": "Your verification is being reviewed. You will get access as soon as Didit approves it.",
+      "verificationStartFailed": "Could not start identity verification. Please try again."
+    }
   },
   "notFound": {
     "title": "This page could not be found",

@@ -11,6 +11,8 @@ const userSelect = {
   lastName: true,
   role: true,
   isActive: true,
+  identityVerificationStatus: true,
+  identityVerifiedAt: true,
   deactivation: { select: { reason: true, deactivatedAt: true } },
   createdAt: true,
   updatedAt: true,

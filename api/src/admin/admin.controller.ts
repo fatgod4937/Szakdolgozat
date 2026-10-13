@@ -10,13 +10,14 @@ import {
 } from '@nestjs/common';
 import { AdminGuard } from '../auth/admin.guard';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { IdentityVerificationGuard } from '../auth/identity-verification.guard';
 import { UpdatePetDto } from '../pets/dto/update-pet.dto';
 import { PetsService } from '../pets/pets.service';
 import { SheltersService } from '../shelters/shelters.service';
 import { UsersService } from '../users/users.service';
 
 @Controller('admin')
-@UseGuards(JwtAuthGuard, AdminGuard)
+@UseGuards(JwtAuthGuard, IdentityVerificationGuard, AdminGuard)
 export class AdminController {
   constructor(
     private readonly petsService: PetsService,

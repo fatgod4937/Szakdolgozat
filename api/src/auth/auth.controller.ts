@@ -13,6 +13,7 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Request, type Response } from 'express';
 import { AuthService } from './auth.service';
+import { DiditVerificationService } from './didit-verification.service';
 import { LoginDto } from './dto/login.dto';
 import {
   PasswordResetDto,
@@ -28,6 +29,7 @@ import {
   DeleteAccountDto,
 } from './dto/account-settings.dto';
 import { JwtAuthGuard, JwtAuthUser } from './jwt-auth.guard';
+import { IdentityVerificationGuard } from './identity-verification.guard';
 
 type JwtRequest = Request & {
   user?: JwtAuthUser;
@@ -35,7 +37,10 @@ type JwtRequest = Request & {
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly diditVerificationService: DiditVerificationService,
+  ) {}
 
   @Post('register')
   register(@Body() registerDto: RegisterDto) {
@@ -110,18 +115,26 @@ export class AuthController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Post('didit/session')
+  createDiditSession(@Req() request: JwtRequest) {
+    return this.diditVerificationService.createSession(
+      request.user?.sub ?? '',
+    );
+  }
+
+  @UseGuards(JwtAuthGuard, IdentityVerificationGuard)
   @Post('me/password')
   changePassword(@Req() request: JwtRequest, @Body() dto: ChangePasswordDto) {
     return this.authService.changePassword(request.user?.sub ?? '', dto);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, IdentityVerificationGuard)
   @Post('me/email')
   changeEmail(@Req() request: JwtRequest, @Body() dto: ChangeEmailDto) {
     return this.authService.changeEmail(request.user?.sub ?? '', dto);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, IdentityVerificationGuard)
   @Post('me/phone-number')
   changePhoneNumber(
     @Req() request: JwtRequest,

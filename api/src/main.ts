@@ -16,6 +16,7 @@ async function bootstrap() {
       : undefined;
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     httpsOptions,
+    rawBody: true,
   });
 
   app.useWebSocketAdapter(new IoAdapter(app));

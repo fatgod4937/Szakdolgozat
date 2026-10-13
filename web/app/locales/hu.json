@@ -461,9 +461,19 @@
   "onboarding": {
     "eyebrow": "Üdv a Floofsnál",
     "title": "Profilod befejezése",
-    "description": "Ezek az adatok opcionálisak. Később a Beállításokban is megadhatod vagy módosíthatod őket.",
+    "description": "Add meg profiladataidat, miközben elkészül a kötelező személyazonosság-ellenőrzés.",
     "details": "Bemutatkozás és helyzet",
-    "finish": "Állatok böngészése"
+    "finish": "Állatok böngészése",
+    "identityVerification": {
+      "eyebrow": "Kötelező lépés",
+      "title": "Személyazonosság ellenőrzése",
+      "description": "A Floofs használata előtt végezd el a Didit biztonságos személyazonosság-ellenőrzését.",
+      "start": "Személyazonosság ellenőrzésének indítása",
+      "starting": "Didit megnyitása...",
+      "inProgress": "Az ellenőrzés folyamatban van. Fejezd be a Diditben, majd térj vissza ide, amíg megerősítjük az eredményt.",
+      "inReview": "Az ellenőrzésed felülvizsgálat alatt áll. A Didit jóváhagyása után azonnal hozzáférést kapsz.",
+      "verificationStartFailed": "Nem sikerült elindítani a személyazonosság ellenőrzését. Próbáld újra."
+    }
   },
   "notFound": {
     "title": "Ez az oldal nem található",

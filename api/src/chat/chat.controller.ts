@@ -10,6 +10,7 @@ import {
 } from '@nestjs/common';
 import { Request } from 'express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { IdentityVerificationGuard } from '../auth/identity-verification.guard';
 import { ChatService } from './chat.service';
 
 type JwtRequest = Request & {
@@ -40,7 +41,7 @@ type PushSubscriptionPayload = {
 };
 
 @Controller('chat')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, IdentityVerificationGuard)
 export class ChatController {
   constructor(private readonly chatService: ChatService) {}
 

@@ -30,6 +30,17 @@ export type CurrentUser = {
   role: "USER" | "ADMIN" | "SHELTER";
   isActive: boolean;
   isVerified: boolean;
+  identityVerificationStatus:
+    | "NOT_STARTED"
+    | "IN_PROGRESS"
+    | "APPROVED"
+    | "DECLINED"
+    | "IN_REVIEW"
+    | "ABANDONED"
+    | "EXPIRED"
+    | "KYC_EXPIRED"
+    | "RESUBMITTED";
+  identityVerifiedAt?: string | null;
   profilePictureUrl?: string | null;
   bio?: string | null;
   location?: string | null;
@@ -94,6 +105,14 @@ export function updateProfilePicture(profilePicture: File) {
   const formData = new FormData();
   formData.append("profilePicture", profilePicture);
   return postFormData<CurrentUser>("/auth/me/profile-picture", formData);
+}
+
+export function createDiditVerificationSession() {
+  return postJson<{ sessionId: string; url: string }>(
+    "/auth/didit/session",
+    {},
+    true,
+  );
 }
 
 export function verifyEmail(token: string) {

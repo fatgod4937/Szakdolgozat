@@ -15,6 +15,7 @@ import {
 import { Request } from 'express';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard, JwtAuthUser } from '../auth/jwt-auth.guard';
+import { IdentityVerificationGuard } from '../auth/identity-verification.guard';
 import { CreatePetDto } from './dto/create-pet.dto';
 import { UpdatePetDto } from './dto/update-pet.dto';
 import { PetsService } from './pets.service';
@@ -24,7 +25,7 @@ type JwtRequest = Request & {
 };
 
 @Controller('pets')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, IdentityVerificationGuard)
 export class PetsController {
   constructor(private readonly petsService: PetsService) {}
 
