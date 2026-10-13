@@ -79,6 +79,11 @@ export class ChatController {
     return this.chatService.markThreadRead(threadId, request.user?.sub ?? '');
   }
 
+  @Get('push-config')
+  getPushConfiguration() {
+    return this.chatService.getPushConfiguration();
+  }
+
   @Post('push-subscriptions')
   savePushSubscription(
     @Body() payload: PushSubscriptionPayload,

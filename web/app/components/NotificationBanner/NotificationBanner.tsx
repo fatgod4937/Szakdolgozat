@@ -73,7 +73,7 @@ export default function NotificationBanner() {
   const styles = notificationStyles[notification.type];
 
   return (
-    <div className="pointer-events-none fixed left-1/2 top-5 z-[10000] w-[calc(100vw-2rem)] max-w-lg -translate-x-1/2 px-4 sm:top-6">
+    <div className="pointer-events-none fixed left-1/2 top-[calc(env(safe-area-inset-top)+5.5rem)] z-[10000] w-[calc(100vw-2rem)] max-w-lg -translate-x-1/2 px-4 sm:top-6">
       <div
         className={`pointer-events-auto rounded-2xl border ${styles.accent} ${styles.background} ${styles.text} shadow-[0_18px_50px_rgba(0,0,0,0.18)]`}
         role="status"

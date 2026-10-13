@@ -1,4 +1,4 @@
-import { savePushSubscription } from "./chat-api";
+import { getPushConfiguration, savePushSubscription } from "./chat-api";
 
 export type PushNotificationSupportIssue =
   | "insecure"
@@ -62,10 +62,11 @@ export async function enablePushNotifications() {
     throw new Error("Push notifications are not supported by this browser.");
   }
 
-  const publicKey = import.meta.env.VITE_VAPID_PUBLIC_KEY?.trim();
+  const configuration = await getPushConfiguration();
+  const publicKey = configuration.publicKey?.trim();
 
-  if (!publicKey) {
-    throw new Error("Push notifications are not configured yet.");
+  if (!configuration.configured || !publicKey) {
+    throw new Error("Push notifications are not configured on the server.");
   }
 
   const permission = await Notification.requestPermission();

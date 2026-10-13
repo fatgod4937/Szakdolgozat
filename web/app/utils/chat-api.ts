@@ -107,6 +107,12 @@ export function savePushSubscription(subscription: PushSubscriptionJSON) {
   );
 }
 
+export function getPushConfiguration() {
+  return getJson<{ configured: boolean; publicKey?: string }>(
+    "/chat/push-config",
+  );
+}
+
 export function registerChatDevice(device: ChatDevice) {
   return postJson<ChatDevice>(
     "/chat/devices",

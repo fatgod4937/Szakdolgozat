@@ -15,6 +15,7 @@ type PushSubscriptionPayload = {
 export class PushNotificationService {
   private readonly logger = new Logger(PushNotificationService.name);
   private readonly isConfigured: boolean;
+  private readonly publicKey?: string;
 
   constructor(
     private readonly prismaService: PrismaService,
@@ -24,6 +25,7 @@ export class PushNotificationService {
     const privateKey = configService.get<string>('VAPID_PRIVATE_KEY')?.trim();
     const subject = configService.get<string>('VAPID_SUBJECT')?.trim();
 
+    this.publicKey = publicKey;
     this.isConfigured = Boolean(publicKey && privateKey && subject);
 
     if (this.isConfigured) {
@@ -33,6 +35,13 @@ export class PushNotificationService {
         'Web push is disabled. Set VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, and VAPID_SUBJECT to enable it.',
       );
     }
+  }
+
+  getConfiguration() {
+    return {
+      configured: this.isConfigured,
+      publicKey: this.isConfigured ? this.publicKey : undefined,
+    };
   }
 
   async saveSubscription(userId: string, payload: PushSubscriptionPayload) {

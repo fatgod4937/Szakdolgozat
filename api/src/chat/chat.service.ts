@@ -443,6 +443,10 @@ export class ChatService {
     });
   }
 
+  getPushConfiguration() {
+    return this.pushNotificationService.getConfiguration();
+  }
+
   async removePushSubscription(userId: string, endpoint: string) {
     this.requireUserId(userId);
 
