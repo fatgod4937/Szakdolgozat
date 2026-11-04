@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
@@ -69,18 +69,42 @@ export default function OnboardingPage() {
           : t("settings.profilePictureInvalid"),
       ),
   });
+  const verificationTab = useRef<Window | null>(null);
   const diditSessionMutation = useMutation({
     mutationFn: createDiditVerificationSession,
     onSuccess: ({ url }) => {
-      window.location.assign(url);
+      const tab = verificationTab.current;
+      if (tab && !tab.closed) {
+        tab.location.href = url;
+      } else {
+        window.location.assign(url);
+      }
     },
-    onError: (error) =>
+    onError: (error) => {
+      verificationTab.current?.close();
       showError(
         error instanceof Error
           ? error.message
           : t("onboarding.verificationStartFailed"),
-      ),
+      );
+    },
   });
+
+  const startVerification = () => {
+    // Open synchronously on click so popup blockers allow it; navigate once the session URL is known.
+    const tab = window.open("about:blank", "_blank");
+    if (tab) tab.opener = null;
+    verificationTab.current = tab;
+    diditSessionMutation.mutate();
+  };
+
+  // Didit redirects the verification tab back here when finished; close it so the original tab shows the result.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.has("verificationSessionId") || params.has("status")) {
+      window.close();
+    }
+  }, []);
 
   useEffect(() => {
     if (
@@ -131,7 +155,7 @@ export default function OnboardingPage() {
           ) : canStartVerification ? (
             <button
               type="button"
-              onClick={() => diditSessionMutation.mutate()}
+              onClick={startVerification}
               disabled={diditSessionMutation.isPending}
               className="mt-5 rounded-full bg-black px-5 py-3 text-sm font-semibold text-white transition hover:bg-black/80 disabled:cursor-not-allowed disabled:opacity-60"
             >
