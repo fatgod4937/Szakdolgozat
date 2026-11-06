@@ -1,51 +1,65 @@
-import React from "react";
-const animals = {
-  animals: [
-    {
-      name: "Bodri",
-      image:
-        "https://cdn.pixabay.com/photo/2016/03/27/21/16/dog-1284307_960_720.jpg",
-      location: "Budapest",
-    },
-    {
-      name: "Cirmi",
-      image:
-        "https://cdn.pixabay.com/photo/2017/11/09/21/41/cat-2934720_960_720.jpg",
-      location: "Debrecen",
-    },
-    {
-      name: "Folti",
-      image:
-        "https://cdn.pixabay.com/photo/2016/03/27/21/16/dog-1284307_960_720.jpg",
-      location: "Pécs",
-    },
-    {
-      name: "Luna",
-      image:
-        "https://cdn.pixabay.com/photo/2017/02/20/18/03/cat-2083492_960_720.jpg",
-      location: "Győr",
-    },
-  ],
-};
+import { useQuery } from "@tanstack/react-query";
+import { listLandingPets } from "../../utils/pets-api";
+
+function getImageBaseUrl() {
+  const apiUrl =
+    import.meta.env.VITE_API_URL ?? "https://192.168.0.100:3000/api";
+
+  return apiUrl.replace(/\/api\/?$/, "");
+}
+
+function getPetImageUrl(photoUrl: string) {
+  if (photoUrl.startsWith("http://") || photoUrl.startsWith("https://")) {
+    return photoUrl;
+  }
+
+  return `${getImageBaseUrl()}${photoUrl}`;
+}
 
 export const Belt = () => {
+  const petsQuery = useQuery({
+    queryKey: ["landing-pets"],
+    queryFn: listLandingPets,
+  });
+  const pets = petsQuery.data ?? [];
+
+  if (petsQuery.isError) {
+    return (
+      <p className="mt-8 text-center text-sm text-red-700" role="alert">
+        Unable to load featured pets.
+      </p>
+    );
+  }
+
+  if (pets.length === 0) {
+    return null;
+  }
+
   return (
-    <div className="flex flex-row space-x-3 mt-2 max-w-full w-full items-center justify-around">
-      {animals.animals.map((item) => {
+    <section className="mt-8" aria-label="Featured pets">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {pets.map((pet) => {
+        const mainPhoto = pet.photoUrls[0];
+
         return (
           <div
-              key={item.name}
-            style={{ backgroundImage: `url(${item.image})` }}
-            className="relative w-1/4 h-75 rounded-xl overflow-hidden shadow-lg bg-cover bg-center"
+            key={pet.id}
+            className="relative aspect-[4/3] overflow-hidden rounded-xl bg-black shadow-lg"
           >
-            <div className="absolute bottom-0 left-0 w-full h-1/3 bg-gradient-to-t from-black to-transparent"></div>
+            <img
+              src={getPetImageUrl(mainPhoto)}
+              alt={pet.name}
+              className="h-full w-full object-cover"
+            />
+            <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black to-transparent" />
             <div className="absolute bottom-2 left-2 text-white">
-              <h3 className="font-bold text-lg">{item.name}</h3>
-              <p className="text-sm opacity-80">{item.location}</p>
+              <h3 className="text-lg font-bold">{pet.name}</h3>
+              <p className="text-sm opacity-80">{pet.location}</p>
             </div>
           </div>
         );
       })}
-    </div>
+      </div>
+    </section>
   );
 };

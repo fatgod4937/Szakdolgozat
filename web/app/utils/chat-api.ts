@@ -1,4 +1,4 @@
-import { getJson, postJson } from "./api";
+import { deleteJson, getJson, postJson } from "./api";
 import type { BreedRecord } from "./pets-api";
 import type {
   ChatDevice,
@@ -103,6 +103,14 @@ export function savePushSubscription(subscription: PushSubscriptionJSON) {
   return postJson<{ endpoint: string }>(
     "/chat/push-subscriptions",
     subscription,
+    true,
+  );
+}
+
+export function removePushSubscription(endpoint: string) {
+  return deleteJson<{ removed: boolean }>(
+    "/chat/push-subscriptions",
+    { endpoint },
     true,
   );
 }

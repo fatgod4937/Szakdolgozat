@@ -156,6 +156,28 @@ export class PetsService {
     };
   }
 
+  async findFeatured(limit = 4) {
+    const pets = await this.prismaService.pet.findMany({
+      where: {
+        adoptionStatus: PetAdoptionStatus.AVAILABLE,
+        photoUrls: { isEmpty: false },
+      },
+      select: {
+        id: true,
+        name: true,
+        location: true,
+        photoUrls: true,
+      },
+    });
+
+    for (let index = pets.length - 1; index > 0; index -= 1) {
+      const randomIndex = Math.floor(Math.random() * (index + 1));
+      [pets[index], pets[randomIndex]] = [pets[randomIndex], pets[index]];
+    }
+
+    return pets.slice(0, limit);
+  }
+
   async searchLocations(query?: string) {
     const search = query?.trim();
     if (!search || search.length < 3) return [];

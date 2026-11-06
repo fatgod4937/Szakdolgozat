@@ -1,4 +1,8 @@
-import { getPushConfiguration, savePushSubscription } from "./chat-api";
+import {
+  getPushConfiguration,
+  removePushSubscription,
+  savePushSubscription,
+} from "./chat-api";
 
 export type PushNotificationSupportIssue =
   | "insecure"
@@ -91,4 +95,35 @@ export async function enablePushNotifications() {
   }
 
   await savePushSubscription(subscriptionJson);
+}
+
+export async function disablePushNotifications() {
+  if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+    return;
+  }
+
+  const registration = await navigator.serviceWorker.ready;
+  const subscription = await registration.pushManager.getSubscription();
+
+  if (!subscription) {
+    return;
+  }
+
+  let removalError: unknown;
+
+  try {
+    await removePushSubscription(subscription.endpoint);
+  } catch (error) {
+    removalError = error;
+  }
+
+  const unsubscribed = await subscription.unsubscribe();
+
+  if (!unsubscribed) {
+    throw new Error("Could not disable push notifications on this device.");
+  }
+
+  if (removalError) {
+    throw removalError;
+  }
 }

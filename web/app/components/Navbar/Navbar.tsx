@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { clearAuthTokens } from "../../utils/token-storage";
-import { showWarning } from "../../utils/notification";
+import { showError, showWarning } from "../../utils/notification";
 import useAuthSession from "../../hooks/useAuthSession";
 import { useQuery } from "@tanstack/react-query";
 import { getCurrentUser } from "../../utils/auth-api";
@@ -12,10 +12,12 @@ import { useTranslation } from "react-i18next";
 import useIsMobile from "../../hooks/useIsMobile";
 import { MessageCircle } from "lucide-react";
 import { listChatThreads } from "../../utils/chat-api";
+import { disablePushNotifications } from "../../utils/push-notifications";
 
 const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const { isAuthenticated, isLoading } = useAuthSession();
   const currentUserQuery = useQuery({
     queryKey: ["current-user"],
@@ -47,11 +49,28 @@ const Navbar = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const handleLogout = () => {
-    clearAuthTokens();
-    showWarning(t("nav.logout"));
-    setMobileMenuOpen(false);
-    navigate("/");
+  const handleLogout = async () => {
+    if (isLoggingOut) {
+      return;
+    }
+
+    setIsLoggingOut(true);
+
+    try {
+      await disablePushNotifications();
+    } catch (error) {
+      showError(
+        error instanceof Error
+          ? error.message
+          : "Could not disable push notifications.",
+      );
+    } finally {
+      clearAuthTokens();
+      showWarning(t("nav.logout"));
+      setMobileMenuOpen(false);
+      navigate("/");
+      setIsLoggingOut(false);
+    }
   };
 
   const handleMobileNavigate = () => {
@@ -275,7 +294,8 @@ const Navbar = () => {
               {isAuthenticated ? (
                 <button
                   type="button"
-                  onClick={handleLogout}
+                  onClick={() => void handleLogout()}
+                  disabled={isLoggingOut}
                   className="w-full rounded-full bg-[#fec8e9] px-4 py-3 font-medium text-black"
                 >
                   {t("nav.logout")}

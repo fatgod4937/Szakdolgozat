@@ -115,9 +115,14 @@ export async function patchJson<TResponse>(
   });
 }
 
-export async function deleteJson<TResponse>(path: string, auth = true) {
+export async function deleteJson<TResponse>(
+  path: string,
+  body?: unknown,
+  auth = true,
+) {
   return request<TResponse>(path, {
     method: "DELETE",
+    body: body === undefined ? undefined : JSON.stringify(body),
     auth,
   });
 }

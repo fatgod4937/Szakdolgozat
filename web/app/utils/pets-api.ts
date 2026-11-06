@@ -92,6 +92,11 @@ export type PaginatedPetsResponse = {
   totalPages: number;
 };
 
+export type LandingPetRecord = Pick<
+  PetRecord,
+  "id" | "name" | "location" | "photoUrls"
+>;
+
 export type PetListFilters = {
   search?: string;
   species?: string;
@@ -220,6 +225,10 @@ export function listPets(page = 1, limit = 10, filters: PetListFilters = {}) {
   });
 
   return getJson<PaginatedPetsResponse>(`/pets?${searchParams.toString()}`);
+}
+
+export function listLandingPets() {
+  return getJson<LandingPetRecord[]>("/landing/pets", false);
 }
 
 export function listBreeds(
