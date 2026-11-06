@@ -1,5 +1,5 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { Prisma, UserRole } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateShelterDto } from './dto/create-shelter.dto';
 import { UpdateShelterDto } from './dto/update-shelter.dto';
@@ -37,6 +37,12 @@ export class SheltersService {
   }
 
   create(createShelterDto: CreateShelterDto) {
+    return this.createShelter(createShelterDto);
+  }
+
+  private async createShelter(createShelterDto: CreateShelterDto) {
+    await this.assertShelterOwner(createShelterDto.ownerId);
+
     return this.prismaService.shelter.create({
       data: {
         name: createShelterDto.name,
@@ -45,6 +51,7 @@ export class SheltersService {
         contactEmail: createShelterDto.contactEmail ?? null,
         websiteUrl: createShelterDto.websiteUrl ?? null,
         isVerified: createShelterDto.isVerified ?? false,
+        ownerId: createShelterDto.ownerId ?? null,
       },
       select: shelterSelect,
     });
@@ -52,6 +59,7 @@ export class SheltersService {
 
   async update(id: string, updateShelterDto: UpdateShelterDto) {
     await this.assertShelterExists(id);
+    await this.assertShelterOwner(updateShelterDto.ownerId);
 
     return this.prismaService.shelter.update({
       where: { id },
@@ -62,6 +70,7 @@ export class SheltersService {
         contactEmail: updateShelterDto.contactEmail,
         websiteUrl: updateShelterDto.websiteUrl,
         isVerified: updateShelterDto.isVerified,
+        ownerId: updateShelterDto.ownerId,
       },
       select: shelterSelect,
     });
@@ -97,6 +106,23 @@ export class SheltersService {
 
     if (!shelter) {
       throw new NotFoundException(`Shelter with id "${id}" was not found`);
+    }
+  }
+
+  private async assertShelterOwner(ownerId?: string | null) {
+    if (ownerId === undefined || ownerId === null) {
+      return;
+    }
+
+    const owner = await this.prismaService.user.findUnique({
+      where: { id: ownerId },
+      select: { role: true },
+    });
+
+    if (!owner || owner.role !== UserRole.SHELTER) {
+      throw new BadRequestException(
+        'A shelter owner must be an existing SHELTER account.',
+      );
     }
   }
 }

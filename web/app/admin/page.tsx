@@ -18,6 +18,10 @@ import { showError, showSuccess } from "../utils/notification";
 import type { PetAdoptionStatus } from "../utils/pets-api";
 import { useDebounce } from "../hooks/useDebounce";
 import { useTranslation } from "react-i18next";
+import {
+  listDisputedProfileComments,
+  removeProfileComment,
+} from "../utils/profiles-api";
 
 export default function AdminPage() {
   const queryClient = useQueryClient();
@@ -52,6 +56,11 @@ export default function AdminPage() {
   const usersQuery = useQuery({
     queryKey: ["admin", "users", debouncedUserSearch],
     queryFn: () => listAdminUsers(debouncedUserSearch),
+    enabled: isAdmin,
+  });
+  const disputedCommentsQuery = useQuery({
+    queryKey: ["admin", "profile-comment-disputes"],
+    queryFn: listDisputedProfileComments,
     enabled: isAdmin,
   });
   const refreshAdminData = () =>
@@ -117,6 +126,17 @@ export default function AdminPage() {
           : "Could not update user profile.",
       ),
   });
+  const removeCommentMutation = useMutation({
+    mutationFn: removeProfileComment,
+    onSuccess: () => {
+      showSuccess("Comment removed.");
+      refreshAdminData();
+    },
+    onError: (error) =>
+      showError(
+        error instanceof Error ? error.message : "Could not remove comment.",
+      ),
+  });
 
   if (userQuery.isPending) return null;
   if (!isAdmin) return <Navigate to="/pets" replace />;
@@ -136,6 +156,52 @@ export default function AdminPage() {
           {t("admin.title")}
         </h1>
         <p className="mt-3 max-w-2xl text-black/65">{t("admin.description")}</p>
+        <section className="mt-10 border-t-2 border-[#fec8e9] pt-5">
+          <div className="flex items-baseline justify-between gap-4">
+            <h2 className="text-2xl font-semibold">Comment disputes</h2>
+            <span className="text-sm text-black/55">
+              {disputedCommentsQuery.data?.length ?? 0} open
+            </span>
+          </div>
+          <div className="mt-4 grid gap-3">
+            {(disputedCommentsQuery.data ?? []).map((comment) => (
+              <article
+                key={comment.id}
+                className="rounded-xl border border-black/10 bg-white p-4 shadow-sm"
+              >
+                <div className="flex flex-col justify-between gap-4 sm:flex-row">
+                  <div>
+                    <p className="text-sm font-medium">
+                      {comment.author.firstName} {comment.author.lastName}
+                    </p>
+                    <p className="mt-2 whitespace-pre-wrap text-sm text-black/80">
+                      {comment.content}
+                    </p>
+                    <p className="mt-3 text-sm text-black/60">
+                      Dispute: {comment.disputeReason}
+                    </p>
+                    <p className="mt-2 text-xs text-black/45">
+                      {comment.targetType.toLowerCase()} profile ·{" "}
+                      {new Date(comment.disputedAt ?? comment.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={removeCommentMutation.isPending}
+                    onClick={() => removeCommentMutation.mutate(comment.id)}
+                    className="h-fit rounded-full bg-[#fee2e2] px-4 py-2 text-sm font-semibold text-[#991b1b] disabled:opacity-50"
+                  >
+                    Remove comment
+                  </button>
+                </div>
+              </article>
+            ))}
+            {!disputedCommentsQuery.isPending &&
+            (disputedCommentsQuery.data ?? []).length === 0 ? (
+              <p className="text-sm text-black/60">No open comment disputes.</p>
+            ) : null}
+          </div>
+        </section>
         <div className="mt-10 grid gap-8 lg:grid-cols-2">
           <section className="border-t-2 border-[#fec8e9] pt-5">
             <div className="flex items-baseline justify-between gap-4">

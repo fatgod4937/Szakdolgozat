@@ -44,6 +44,17 @@ enum PetAdoptionStatus {
   ADOPTED
 }
 
+enum ProfileCommentTargetType {
+  USER
+  SHELTER
+}
+
+enum ProfileCommentDisputeStatus {
+  NONE
+  OPEN
+  RESOLVED
+}
+
 model User {
   id           String   @id @default(uuid())
   email        String   @unique
@@ -79,6 +90,8 @@ model User {
   pushSubscriptions    PushSubscription[]
   deactivation         UserDeactivation?
   favorites            Favorite[]
+  shelter              Shelter?     @relation("ShelterOwner")
+  profileComments      ProfileComment[] @relation("ProfileCommentAuthor")
 
   @@map("users")
 }
@@ -112,10 +125,39 @@ model Shelter {
   contactEmail String?
   websiteUrl   String?
   isVerified     Boolean  @default(false)
+  ownerId        String?  @unique
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
+  owner User? @relation("ShelterOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+
   @@map("shelters")
+}
+
+model ProfileComment {
+  id            String                      @id @default(uuid())
+  targetType    ProfileCommentTargetType
+  targetId      String
+  authorId      String
+  parentId      String?
+  content       String
+  isRemoved     Boolean                     @default(false)
+  removedAt     DateTime?
+  removedById   String?
+  disputeStatus ProfileCommentDisputeStatus @default(NONE)
+  disputeReason String?
+  disputedAt    DateTime?
+  createdAt     DateTime                    @default(now())
+  updatedAt     DateTime                    @updatedAt
+
+  author       User            @relation("ProfileCommentAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  parent       ProfileComment? @relation("ProfileCommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies      ProfileComment[] @relation("ProfileCommentReplies")
+
+  @@index([targetType, targetId, createdAt])
+  @@index([parentId])
+  @@index([disputeStatus])
+  @@map("profile_comments")
 }
 
 model Pet {

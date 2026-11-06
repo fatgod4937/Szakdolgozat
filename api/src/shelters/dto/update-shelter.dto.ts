@@ -5,4 +5,5 @@ export class UpdateShelterDto {
   contactEmail?: string | null;
   websiteUrl?: string | null;
   isVerified?: boolean;
+  ownerId?: string | null;
 }

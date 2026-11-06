@@ -347,6 +347,18 @@ export function PetCard({ pet }: { pet: PetRecord }) {
           </>
         ) : null}
       </div>
+      {pet.owner ? (
+        <Link
+          to={
+            pet.owner.shelter
+              ? `/profiles/shelter/${pet.owner.shelter.id}`
+              : `/profiles/user/${pet.owner.id}`
+          }
+          className="block border-t border-black/8 px-6 py-4 text-sm font-medium text-[#aa2f75] hover:bg-[#fff7fb]"
+        >
+          View {pet.owner.shelter?.name ?? `${pet.owner.firstName} ${pet.owner.lastName}`} profile
+        </Link>
+      ) : null}
 
       <div className="space-y-5 p-6">
         <div>

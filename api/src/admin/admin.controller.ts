@@ -6,21 +6,27 @@ import {
   Param,
   Patch,
   Query,
+  Req,
   UseGuards,
 } from '@nestjs/common';
+import { Request } from 'express';
 import { AdminGuard } from '../auth/admin.guard';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { IdentityVerificationGuard } from '../auth/identity-verification.guard';
 import { UpdatePetDto } from '../pets/dto/update-pet.dto';
 import { PetsService } from '../pets/pets.service';
+import { ProfilesService } from '../profiles/profiles.service';
 import { SheltersService } from '../shelters/shelters.service';
 import { UsersService } from '../users/users.service';
+
+type JwtRequest = Request & { user?: { sub: string } };
 
 @Controller('admin')
 @UseGuards(JwtAuthGuard, IdentityVerificationGuard, AdminGuard)
 export class AdminController {
   constructor(
     private readonly petsService: PetsService,
+    private readonly profilesService: ProfilesService,
     private readonly sheltersService: SheltersService,
     private readonly usersService: UsersService,
   ) {}
@@ -59,6 +65,16 @@ export class AdminController {
     @Body('reason') reason?: string,
   ) {
     return this.usersService.setActiveStatus(id, isActive === true, reason);
+  }
+
+  @Get('profile-comments/disputes')
+  listCommentDisputes() {
+    return this.profilesService.listDisputedComments();
+  }
+
+  @Delete('profile-comments/:id')
+  removeProfileComment(@Param('id') id: string, @Req() request: JwtRequest) {
+    return this.profilesService.removeComment(id, request.user?.sub ?? '');
   }
 
   @Patch('pets/:id')

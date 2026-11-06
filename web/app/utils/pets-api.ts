@@ -41,6 +41,7 @@ export type PetRecord = {
     firstName: string;
     lastName: string;
     role: "USER" | "ADMIN" | "SHELTER";
+    shelter?: { id: string; name: string } | null;
   } | null;
   createdAt: string;
   updatedAt: string;

@@ -4,6 +4,7 @@ import { AdminModule } from './admin/admin.module';
 import { AuthModule } from './auth/auth.module';
 import { ChatModule } from './chat/chat.module';
 import { PetsModule } from './pets/pets.module';
+import { ProfilesModule } from './profiles/profiles.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { SheltersModule } from './shelters/shelters.module';
 import { UsersModule } from './users/users.module';
@@ -22,6 +23,7 @@ import { WebhooksModule } from './webhooks/webhooks.module';
     UsersModule,
     SheltersModule,
     PetsModule,
+    ProfilesModule,
     WebhooksModule,
   ],
 })

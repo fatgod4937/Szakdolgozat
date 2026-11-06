@@ -66,6 +66,7 @@ const petSelect = {
       firstName: true,
       lastName: true,
       role: true,
+      shelter: { select: { id: true, name: true } },
     },
   },
   createdAt: true,

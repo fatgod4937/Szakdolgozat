@@ -5,4 +5,5 @@ export class CreateShelterDto {
   contactEmail?: string | null;
   websiteUrl?: string | null;
   isVerified?: boolean;
+  ownerId?: string | null;
 }

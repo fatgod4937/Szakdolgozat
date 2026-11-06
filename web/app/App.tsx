@@ -23,6 +23,7 @@ import AccountDeactivatedPage from "./account-deactivated/page";
 import ForgotPasswordPage from "./forgot-password/page";
 import OnboardingPage from "./onboarding/page";
 import ResetPasswordPage from "./reset-password/page";
+import ProfilePage from "./profile/page";
 import useChatNotifications from "./hooks/useChatNotifications";
 
 export default function App() {
@@ -134,6 +135,14 @@ function AppContent() {
             element={
               <RequireAuth>
                 <PetChatPage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/profiles/:type/:id"
+            element={
+              <RequireAuth>
+                <ProfilePage />
               </RequireAuth>
             }
           />
