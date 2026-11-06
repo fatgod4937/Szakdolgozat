@@ -5,7 +5,7 @@ import { Link } from "react-router-dom";
 import { MessageCircle, Plus } from "lucide-react";
 import useAuthSession from "../../hooks/useAuthSession";
 import { useTranslation } from "react-i18next";
-import { askSupportQuestion } from "../../utils/chat-api";
+import { askPublicSupportQuestion } from "../../utils/support-api";
 
 type SupportMessage = {
   content: string;
@@ -72,8 +72,6 @@ export default function QuickActions() {
     };
   }, []);
 
-  if (!isAuthenticated) return null;
-
   const sendSupportQuestion = async (
     event: React.FormEvent<HTMLFormElement>,
   ) => {
@@ -89,7 +87,7 @@ export default function QuickActions() {
       { content: question, sender: "user" },
     ]);
     try {
-      const { answer } = await askSupportQuestion(question, i18n.language);
+      const { answer } = await askPublicSupportQuestion(question, i18n.language);
       setSupportMessages((messages) => [
         ...messages,
         { content: answer, sender: "assistant" },
@@ -181,6 +179,7 @@ export default function QuickActions() {
       {!isAssistantOpen ? (
         <button
           type="button"
+          onClick={() => setIsAssistantOpen(true)}
           className="fixed bottom-6 left-4 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-black text-white shadow-lg transition hover:scale-105 sm:left-6"
           style={{ bottom: bottomOffset }}
           aria-label={t("actions.support")}
@@ -189,7 +188,7 @@ export default function QuickActions() {
           <MessageCircle className="h-6 w-6" />
         </button>
       ) : null}
-      <Link
+      {isAuthenticated ? <Link
         to="/pets/new"
         className="fixed bottom-6 right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-[#fec8e9] text-black shadow-[0_20px_40px_rgba(254,200,233,0.55)] transition hover:scale-105 sm:right-6"
         style={{ bottom: bottomOffset }}
@@ -197,7 +196,7 @@ export default function QuickActions() {
         title={t("actions.addPet")}
       >
         <Plus className="h-7 w-7" />
-      </Link>
+      </Link> : null}
     </>
   );
 }

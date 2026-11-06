@@ -24,12 +24,14 @@ import PictureForm from "./components/PictureForm";
 import ProfileDetailsForm from "./components/ProfileDetailsForm";
 import ProfileForm from "./components/ProfileForm";
 import NotificationSettingsForm from "./components/NotificationSettingsForm";
+import DonationSettingsForm from "./components/DonationSettingsForm";
 
 type SettingsSection =
   | "profile"
   | "details"
   | "picture"
   | "notifications"
+  | "donations"
   | "email"
   | "password"
   | "phone"
@@ -79,6 +81,15 @@ export default function SettingsPage() {
         label: t("settings.notifications"),
         hint: t("settings.notificationsHint"),
       },
+      ...(userQuery.data?.role === "SHELTER"
+        ? [
+            {
+              id: "donations" as const,
+              label: "Donations",
+              hint: "Bank transfer and external donation links",
+            },
+          ]
+        : []),
       {
         id: "email",
         label: t("settings.email"),
@@ -297,6 +308,7 @@ export default function SettingsPage() {
               />
             ) : null}
             {section === "notifications" ? <NotificationSettingsForm /> : null}
+            {section === "donations" ? <DonationSettingsForm /> : null}
             {section === "email" ? (
               <EmailForm
                 email={email}

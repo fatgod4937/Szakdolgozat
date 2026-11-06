@@ -126,6 +126,10 @@ model Shelter {
   websiteUrl   String?
   isVerified     Boolean  @default(false)
   ownerId        String?  @unique
+  donationIban   String?
+  paypalDonationUrl String?
+  donationUrl    String?
+  donationUrlLabel String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 

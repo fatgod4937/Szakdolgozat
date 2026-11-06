@@ -79,6 +79,10 @@ export class ProfilesService {
         contactEmail: true,
         websiteUrl: true,
         isVerified: true,
+        donationIban: true,
+        paypalDonationUrl: true,
+        donationUrl: true,
+        donationUrlLabel: true,
         owner: {
           select: {
             id: true,

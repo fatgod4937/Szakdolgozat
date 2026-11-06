@@ -311,6 +311,44 @@ export default function ProfilePage() {
           </div>
         </header>
         <div className="mt-10 space-y-10">
+          {shelterProfile?.donationIban ||
+          shelterProfile?.paypalDonationUrl ||
+          shelterProfile?.donationUrl ? (
+            <section className="rounded-2xl border border-[#fec8e9] bg-[#fff7fb] p-6">
+              <h2 className="text-2xl font-semibold">Support this shelter</h2>
+              <p className="mt-2 text-sm leading-6 text-black/65">
+                Donations are completed directly with the shelter's chosen
+                provider. Floofs does not process or store payment details.
+              </p>
+              <div className="mt-4 flex flex-wrap gap-3">
+                {shelterProfile.donationIban ? (
+                  <span className="rounded-full border border-black/10 bg-white px-4 py-2 text-sm">
+                    IBAN: {shelterProfile.donationIban}
+                  </span>
+                ) : null}
+                {shelterProfile.paypalDonationUrl ? (
+                  <a
+                    href={shelterProfile.paypalDonationUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="rounded-full bg-black px-4 py-2 text-sm font-medium text-white"
+                  >
+                    Donate with PayPal
+                  </a>
+                ) : null}
+                {shelterProfile.donationUrl ? (
+                  <a
+                    href={shelterProfile.donationUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="rounded-full border border-black/15 bg-white px-4 py-2 text-sm font-medium"
+                  >
+                    {shelterProfile.donationUrlLabel || "Donate"}
+                  </a>
+                ) : null}
+              </div>
+            </section>
+          ) : null}
           <PetList title="Current listings" pets={profile.currentListings} />
           <PetList title="Previous pets" pets={profile.previousPets} />
           <Comments targetType={targetType} targetId={id} isProfileOwner={isProfileOwner} />
