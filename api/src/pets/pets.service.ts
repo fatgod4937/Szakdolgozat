@@ -325,7 +325,9 @@ export class PetsService {
     createPetDto: CreatePetDto,
     ownerId: string,
     files: UploadedPetFile[] = [],
+    requester?: JwtAuthUser,
   ) {
+    await this.assertShelterCanCreateListings(requester);
     this.assertValidPhotoCount(files);
     const species = this.requireText(createPetDto.species, 'species');
     const speciesRecord = await this.resolveSpecies(species);
@@ -696,6 +698,23 @@ export class PetsService {
     ) {
       throw new ForbiddenException(
         'You can only manage your own pet listings.',
+      );
+    }
+  }
+
+  private async assertShelterCanCreateListings(requester?: JwtAuthUser) {
+    if (requester?.role !== UserRole.SHELTER) {
+      return;
+    }
+
+    const shelter = await this.prismaService.shelter.findUnique({
+      where: { ownerId: requester.sub },
+      select: { isVerified: true },
+    });
+
+    if (!shelter?.isVerified) {
+      throw new ForbiddenException(
+        'Your shelter application must be approved before you can create listings.',
       );
     }
   }

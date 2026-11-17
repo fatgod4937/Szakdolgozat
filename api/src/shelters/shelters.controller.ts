@@ -7,8 +7,11 @@ import {
   Patch,
   Post,
   Req,
+  UploadedFiles,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FilesInterceptor } from '@nestjs/platform-express';
 import { Request } from 'express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { IdentityVerificationGuard } from '../auth/identity-verification.guard';
@@ -27,6 +30,37 @@ export class SheltersController {
   @Get('me/donation-settings')
   getDonationSettings(@Req() request: JwtRequest) {
     return this.sheltersService.getDonationSettings(request.user?.sub ?? '');
+  }
+
+  @Get('me/application')
+  getMyApplication(@Req() request: JwtRequest) {
+    return this.sheltersService.getMyApplication(request.user?.sub ?? '');
+  }
+
+  @Post('me/application')
+  @UseInterceptors(FilesInterceptor('documents', 5))
+  submitApplication(
+    @Req() request: JwtRequest,
+    @Body()
+    details: {
+      name?: string;
+      description?: string;
+      city?: string;
+      contactEmail?: string;
+      websiteUrl?: string;
+    },
+    @UploadedFiles()
+    files: Array<{
+      originalname: string;
+      buffer: Buffer;
+      mimetype: string;
+    }> = [],
+  ) {
+    return this.sheltersService.submitApplication(
+      request.user?.sub ?? '',
+      details,
+      files,
+    );
   }
 
   @Patch('me/donation-settings')

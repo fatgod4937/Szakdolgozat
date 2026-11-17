@@ -1,17 +1,13 @@
 import { deleteJson, getJson, patchJson } from "./api";
+import { getAccessToken } from "./token-storage";
 import type {
   PaginatedPetsResponse,
   PetAdoptionStatus,
   PetRecord,
 } from "./pets-api";
+import type { ShelterApplication } from "./shelter-api";
 
-export type ShelterRecord = {
-  id: string;
-  name: string;
-  description?: string | null;
-  city?: string | null;
-  contactEmail?: string | null;
-  websiteUrl?: string | null;
+export type ShelterRecord = ShelterApplication & {
   isVerified: boolean;
   createdAt: string;
   updatedAt: string;
@@ -33,10 +29,32 @@ export function listAdminShelters() {
   return getJson<ShelterRecord[]>("/admin/shelters");
 }
 
-export function setShelterApproval(id: string, isVerified: boolean) {
-  return patchJson<ShelterRecord>(`/admin/shelters/${id}/approval`, {
-    isVerified,
+export function reviewShelterApplication(
+  id: string,
+  status: "APPROVED" | "DECLINED",
+  reviewNote?: string,
+) {
+  return patchJson<ShelterRecord>(`/admin/shelters/${id}/review`, {
+    status,
+    reviewNote,
   });
+}
+
+export async function getAdminShelterDocument(documentId: string) {
+  const response = await fetch(
+    `${import.meta.env.VITE_API_URL}/admin/shelter-documents/${documentId}`,
+    {
+      headers: {
+        Authorization: `Bearer ${getAccessToken() ?? ""}`,
+      },
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error("Could not open the shelter document.");
+  }
+
+  return response.blob();
 }
 
 export function listAdminPets(page = 1, limit = 10, search = "") {

@@ -5,12 +5,13 @@ import { useState } from "react";
 import { Navigate } from "react-router-dom";
 import {
   deleteAdminPet,
+  getAdminShelterDocument,
   listAdminPets,
   listAdminShelters,
   listAdminUsers,
+  reviewShelterApplication,
   setAdminPetStatus,
   setAdminUserStatus,
-  setShelterApproval,
   type ShelterRecord,
 } from "../utils/admin-api";
 import { getCurrentUser } from "../utils/auth-api";
@@ -65,9 +66,35 @@ export default function AdminPage() {
   });
   const refreshAdminData = () =>
     void queryClient.invalidateQueries({ queryKey: ["admin"] });
-  const approvalMutation = useMutation({
-    mutationFn: ({ id, isVerified }: { id: string; isVerified: boolean }) =>
-      setShelterApproval(id, isVerified),
+  const openShelterDocument = async (documentId: string) => {
+    const documentWindow = window.open("", "_blank");
+
+    try {
+      const document = await getAdminShelterDocument(documentId);
+      const url = URL.createObjectURL(document);
+      if (documentWindow) {
+        documentWindow.location.href = url;
+      } else {
+        window.open(url, "_blank", "noopener,noreferrer");
+      }
+      window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    } catch (error) {
+      documentWindow?.close();
+      showError(
+        error instanceof Error ? error.message : "Could not open the document.",
+      );
+    }
+  };
+  const shelterReviewMutation = useMutation({
+    mutationFn: ({
+      id,
+      status,
+      reviewNote,
+    }: {
+      id: string;
+      status: "APPROVED" | "DECLINED";
+      reviewNote?: string;
+    }) => reviewShelterApplication(id, status, reviewNote),
     onSuccess: () => {
       showSuccess(t("admin.approvalUpdated"));
       refreshAdminData();
@@ -143,7 +170,9 @@ export default function AdminPage() {
 
   const shelters = sheltersQuery.data ?? [];
   const pets = petsQuery.data?.items ?? [];
-  const pendingShelters = shelters.filter((shelter) => !shelter.isVerified);
+  const pendingShelters = shelters.filter(
+    (shelter) => shelter.applicationStatus === "PENDING",
+  );
   const imageBaseUrl = import.meta.env.VITE_API_URL.replace(/\/api\/?$/, "");
 
   return (
@@ -380,19 +409,46 @@ export default function AdminPage() {
                     </button>
                     <button
                       type="button"
-                      onClick={() =>
-                        approvalMutation.mutate({
+                      onClick={() => {
+                        if (shelter.applicationStatus === "APPROVED") {
+                          return;
+                        }
+                        shelterReviewMutation.mutate({
                           id: shelter.id,
-                          isVerified: !shelter.isVerified,
-                        })
+                          status: "APPROVED",
+                        });
+                      }}
+                      disabled={
+                        shelterReviewMutation.isPending ||
+                        shelter.applicationStatus === "APPROVED"
                       }
-                      disabled={approvalMutation.isPending}
-                      className={`rounded-full px-4 py-2 text-sm font-semibold disabled:opacity-50 ${shelter.isVerified ? "bg-black/5 text-black/70" : "bg-[#fec8e9] text-black"}`}
+                      className={`rounded-full px-4 py-2 text-sm font-semibold disabled:opacity-50 ${shelter.applicationStatus === "APPROVED" ? "bg-black/5 text-black/70" : "bg-[#fec8e9] text-black"}`}
                     >
-                      {shelter.isVerified
-                        ? t("admin.revoke")
-                        : t("admin.approve")}
+                      {shelter.applicationStatus === "APPROVED"
+                        ? "Approved"
+                        : "Approve"}
                     </button>
+                    {shelter.applicationStatus !== "APPROVED" ? (
+                      <button
+                        type="button"
+                        disabled={shelterReviewMutation.isPending}
+                        onClick={() => {
+                          const reviewNote = window.prompt(
+                            "Reason for declining this application:",
+                          );
+                          if (reviewNote?.trim()) {
+                            shelterReviewMutation.mutate({
+                              id: shelter.id,
+                              status: "DECLINED",
+                              reviewNote,
+                            });
+                          }
+                        }}
+                        className="rounded-full bg-[#fee2e2] px-4 py-2 text-sm font-semibold text-[#991b1b] disabled:opacity-50"
+                      >
+                        Decline
+                      </button>
+                    ) : null}
                   </div>
                 </article>
               ))}
@@ -455,6 +511,33 @@ export default function AdminPage() {
                 <dt className="font-semibold">Website</dt>
                 <dd className="mt-1 text-black/65">
                   {selectedShelter.websiteUrl || "Not supplied"}
+                </dd>
+              </div>
+              <div>
+                <dt className="font-semibold">Review status</dt>
+                <dd className="mt-1 text-black/65">
+                  {selectedShelter.applicationStatus}
+                  {selectedShelter.reviewNote
+                    ? ` · ${selectedShelter.reviewNote}`
+                    : ""}
+                </dd>
+              </div>
+              <div>
+                <dt className="font-semibold">Verification documents</dt>
+                <dd className="mt-2 space-y-2">
+                  {selectedShelter.documents.map((document) => (
+                    <button
+                      key={document.id}
+                      type="button"
+                      onClick={() => void openShelterDocument(document.id)}
+                      className="block break-all text-left text-[#aa2f75] underline"
+                    >
+                      {document.fileName} ({document.mimeType})
+                    </button>
+                  ))}
+                  {selectedShelter.documents.length === 0 ? (
+                    <span className="text-black/65">No documents uploaded.</span>
+                  ) : null}
                 </dd>
               </div>
             </dl>

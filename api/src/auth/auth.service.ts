@@ -74,6 +74,11 @@ export class AuthService {
   ) {}
 
   async register(registerDto: RegisterDto) {
+    const { message } = await this.registerAccount(registerDto);
+    return { message };
+  }
+
+  async registerAccount(registerDto: RegisterDto) {
     try {
       if (!registerDto.passwordHash) {
         throw new BadRequestException('passwordHash is required.');
@@ -126,6 +131,7 @@ export class AuthService {
 
       return {
         message: 'Check your email to verify your account before logging in.',
+        userId: user.id,
       };
     } catch (error) {
       this.logRegisterError(error, registerDto);

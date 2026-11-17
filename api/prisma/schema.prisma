@@ -55,6 +55,12 @@ enum ProfileCommentDisputeStatus {
   RESOLVED
 }
 
+enum ShelterApplicationStatus {
+  PENDING
+  APPROVED
+  DECLINED
+}
+
 model User {
   id           String   @id @default(uuid())
   email        String   @unique
@@ -130,12 +136,31 @@ model Shelter {
   paypalDonationUrl String?
   donationUrl    String?
   donationUrlLabel String?
+  applicationStatus ShelterApplicationStatus @default(PENDING)
+  reviewNote     String?
+  reviewedAt     DateTime?
+  reviewedById   String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
   owner User? @relation("ShelterOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  documents ShelterDocument[]
 
   @@map("shelters")
+}
+
+model ShelterDocument {
+  id          String   @id @default(uuid())
+  shelterId   String
+  fileName    String
+  fileUrl     String
+  mimeType    String
+  createdAt   DateTime @default(now())
+
+  shelter Shelter @relation(fields: [shelterId], references: [id], onDelete: Cascade)
+
+  @@index([shelterId])
+  @@map("shelter_documents")
 }
 
 model ProfileComment {

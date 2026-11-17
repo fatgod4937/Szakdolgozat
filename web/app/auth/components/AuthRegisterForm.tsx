@@ -45,6 +45,16 @@ export default function AuthRegisterForm({ onSubmit, submitError }: Props) {
       onSubmit={form.handleSubmit(onSubmit)}
       noValidate
     >
+      <p className="rounded-2xl border border-black/10 bg-[#fffdf9] p-4 text-sm text-black/70">
+        Registering a shelter organization?{" "}
+        <Link
+          to="/shelter-registration"
+          className="font-semibold text-[#aa2f75] underline"
+        >
+          Use the shelter registration form
+        </Link>
+        .
+      </p>
       <div className="grid gap-4 sm:grid-cols-2">
         <Field
           label={t("auth.lastName")}

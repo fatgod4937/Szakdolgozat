@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ForbiddenException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -118,6 +119,8 @@ type EncryptedMessagePayload = {
 export class ChatService {
   private supportKnowledgeBase?: Promise<string>;
 
+  private readonly logger = new Logger(ChatService.name);
+
   constructor(
     private readonly prismaService: PrismaService,
     private readonly configService: ConfigService,
@@ -138,12 +141,24 @@ export class ChatService {
     }
 
     const isHungarian = language.toLowerCase().startsWith('hu');
-    const apiKey = this.configService.get<string>('AI_API_KEY');
     const supportEmail = this.configService
       .get<string>('SUPPORT_EMAIL')
       ?.trim();
+    const knowledgeBase = await this.getSupportKnowledgeBase();
+    const documentedAnswer = this.findDocumentedAnswer(
+      trimmedQuestion,
+      isHungarian,
+      knowledgeBase,
+    );
+
+    if (documentedAnswer) {
+      return { answer: documentedAnswer };
+    }
+
+    const apiKey = this.configService.get<string>('AI_API_KEY');
 
     if (!apiKey) {
+      this.logger.warn('AI_API_KEY is not set; returning support fallback.');
       return { answer: this.getSupportFallback(isHungarian, supportEmail) };
     }
 
@@ -151,7 +166,6 @@ export class ChatService {
       this.configService.get<string>('AI_API_URL') ??
       'https://api.openai.com/v1/chat/completions';
     const model = this.configService.get<string>('AI_MODEL') ?? 'gpt-4o-mini';
-    const knowledgeBase = await this.getSupportKnowledgeBase();
     const systemMessage = [
       'You are the Floofs adoption app support assistant.',
       'Reply in the same language as the user question, even when it is not English or Hungarian. Translate documented answers faithfully when needed.',
@@ -171,6 +185,7 @@ export class ChatService {
           Authorization: `Bearer ${apiKey}`,
           'Content-Type': 'application/json',
         },
+        signal: AbortSignal.timeout(20000),
         body: JSON.stringify({
           model,
           messages: [
@@ -183,6 +198,10 @@ export class ChatService {
       });
 
       if (!response.ok) {
+        const body = (await response.text().catch(() => '')).slice(0, 300);
+        this.logger.error(
+          `AI provider ${endpoint} (model ${model}) responded ${response.status}: ${body}`,
+        );
         throw new Error(`AI provider responded with ${response.status}`);
       }
 
@@ -194,7 +213,10 @@ export class ChatService {
       return {
         answer: answer || this.getSupportFallback(isHungarian, supportEmail),
       };
-    } catch {
+    } catch (error) {
+      this.logger.error(
+        `AI support request failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
       return { answer: this.getSupportFallback(isHungarian, supportEmail) };
     }
   }
@@ -255,6 +277,41 @@ export class ChatService {
     return isHungarian
       ? `Erre a kérdésre nem tudok válaszolni. Kérlek, vedd fel a kapcsolatot a Floofs ügyfélszolgálatával e-mailben${emailSuffix}`
       : `I cannot answer this question. Please contact Floofs support by email${emailSuffix}`;
+  }
+
+  private findDocumentedAnswer(
+    question: string,
+    isHungarian: boolean,
+    knowledgeBase: string,
+  ) {
+    const normalizedQuestion = this.normalizeSupportQuestion(question);
+    const sections = knowledgeBase.split(/^### /m).slice(1);
+
+    for (const section of sections) {
+      const [heading = '', ...content] = section.split('\n');
+
+      if (this.normalizeSupportQuestion(heading) !== normalizedQuestion) {
+        continue;
+      }
+
+      const body = content.join('\n');
+      const answerLabel = isHungarian ? 'Magyar válasz' : 'English answer';
+      const answer = body.match(
+        new RegExp(`\\*\\*${answerLabel}:\\*\\*\\s*([^\\r\\n]+)`),
+      )?.[1];
+
+      return answer?.trim() || null;
+    }
+
+    return null;
+  }
+
+  private normalizeSupportQuestion(value: string) {
+    return value
+      .normalize('NFKC')
+      .toLocaleLowerCase()
+      .replace(/[^\p{L}\p{N}]+/gu, ' ')
+      .trim();
   }
 
   async getThreadForPet(userId: string, petId: string) {

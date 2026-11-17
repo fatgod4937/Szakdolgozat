@@ -24,6 +24,8 @@ import ForgotPasswordPage from "./forgot-password/page";
 import OnboardingPage from "./onboarding/page";
 import ResetPasswordPage from "./reset-password/page";
 import ProfilePage from "./profile/page";
+import ShelterApplicationPage from "./shelter-application/page";
+import ShelterRegistrationPage from "./shelter-registration/page";
 import useChatNotifications from "./hooks/useChatNotifications";
 
 export default function App() {
@@ -143,6 +145,18 @@ function AppContent() {
             element={
               <RequireAuth>
                 <ProfilePage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/shelter-registration"
+            element={<ShelterRegistrationPage />}
+          />
+          <Route
+            path="/shelter-application"
+            element={
+              <RequireAuth>
+                <ShelterApplicationPage />
               </RequireAuth>
             }
           />

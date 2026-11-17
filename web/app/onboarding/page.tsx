@@ -110,7 +110,10 @@ export default function OnboardingPage() {
     if (
       userQuery.data?.identityVerificationStatus === "APPROVED"
     ) {
-      navigate("/pets", { replace: true });
+      navigate(
+        userQuery.data.role === "SHELTER" ? "/shelter-application" : "/pets",
+        { replace: true },
+      );
     }
   }, [navigate, userQuery.data?.identityVerificationStatus]);
 

@@ -145,6 +145,7 @@ export class PetsController {
       createPetDto,
       request.user?.sub ?? '',
       files.photos ?? [],
+      request.user,
     );
   }
 

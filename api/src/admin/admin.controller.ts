@@ -8,8 +8,11 @@ import {
   Query,
   Req,
   UseGuards,
+  StreamableFile,
 } from '@nestjs/common';
 import { Request } from 'express';
+import { createReadStream } from 'fs';
+import { ShelterApplicationStatus } from '@prisma/client';
 import { AdminGuard } from '../auth/admin.guard';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { IdentityVerificationGuard } from '../auth/identity-verification.guard';
@@ -36,12 +39,28 @@ export class AdminController {
     return this.sheltersService.findAll();
   }
 
-  @Patch('shelters/:id/approval')
-  updateShelterApproval(
+  @Patch('shelters/:id/review')
+  reviewShelterApplication(
     @Param('id') id: string,
-    @Body('isVerified') isVerified: boolean,
+    @Body('status') status: ShelterApplicationStatus,
+    @Body('reviewNote') reviewNote: string | undefined,
+    @Req() request: JwtRequest,
   ) {
-    return this.sheltersService.setVerification(id, isVerified);
+    return this.sheltersService.reviewApplication(
+      id,
+      status,
+      request.user?.sub ?? '',
+      reviewNote,
+    );
+  }
+
+  @Get('shelter-documents/:id')
+  async downloadShelterDocument(@Param('id') id: string) {
+    const document = await this.sheltersService.getDocumentForAdmin(id);
+    return new StreamableFile(createReadStream(document.filePath), {
+      type: document.mimeType,
+      disposition: `inline; filename="${document.fileName.replace(/[^a-zA-Z0-9._-]/g, '_')}"`,
+    });
   }
 
   @Get('pets')

@@ -12,6 +12,7 @@ export type RegisterRequest = {
   lastName: string;
   phoneNumber?: string;
   acceptDataSafety: boolean;
+  accountType?: "user" | "shelter";
 };
 
 export type AuthResponse = {

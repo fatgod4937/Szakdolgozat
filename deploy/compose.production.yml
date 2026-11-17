@@ -37,6 +37,7 @@ services:
         condition: service_started
     volumes:
       - api-uploads:/app/uploads
+      - api-private:/app/private
 
   db:
     image: postgres:16-alpine
@@ -64,6 +65,7 @@ services:
 
 volumes:
   api-uploads:
+  api-private:
   caddy-data:
   caddy-config:
   postgres-data:

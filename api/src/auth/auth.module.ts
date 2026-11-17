@@ -34,6 +34,7 @@ import { IdentityVerificationGuard } from './identity-verification.guard';
     AdminGuard,
   ],
   exports: [
+    AuthService,
     DiditVerificationService,
     JwtAuthGuard,
     IdentityVerificationGuard,
