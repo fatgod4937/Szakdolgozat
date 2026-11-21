@@ -191,6 +191,11 @@ export class DonationsService {
           },
           configuration: {
             merchant: { capabilities: { card_payments: { requested: true } } },
+            recipient: {
+              capabilities: {
+                stripe_balance: { stripe_transfers: { requested: true } },
+              },
+            },
           },
           metadata: { shelterId: shelter.id },
         });
@@ -198,6 +203,19 @@ export class DonationsService {
         await this.prismaService.shelter.update({
           where: { id: shelter.id },
           data: { stripeAccountId: accountId },
+        });
+      } else {
+        // Accounts created before transfers were requested need the capability.
+        await stripe.v2.core.accounts.update(accountId, {
+          contact_email:
+            shelter.contactEmail ?? shelter.owner?.email ?? undefined,
+          configuration: {
+            recipient: {
+              capabilities: {
+                stripe_balance: { stripe_transfers: { requested: true } },
+              },
+            },
+          },
         });
       }
 
@@ -229,11 +247,13 @@ export class DonationsService {
       try {
         const account = await this.getStripe().v2.core.accounts.retrieve(
           shelter.stripeAccountId,
-          { include: ['configuration.merchant', 'requirements'] },
+          { include: ['configuration.merchant', 'configuration.recipient', 'requirements'] },
         );
         stripeChargesEnabled =
           account.configuration?.merchant?.capabilities?.card_payments
-            ?.status === 'active';
+            ?.status === 'active' &&
+          account.configuration?.recipient?.capabilities?.stripe_balance
+            ?.stripe_transfers?.status === 'active';
         stripeDetailsSubmitted =
           !account.requirements?.summary?.minimum_deadline;
         await this.prismaService.shelter.update({
