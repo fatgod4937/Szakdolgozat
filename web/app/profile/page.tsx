@@ -1,8 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import { useState } from "react";
 import { showError, showSuccess } from "../utils/notification";
 import { getCurrentUser } from "../utils/auth-api";
+import {
+  createDonationCheckout,
+  type DonationCurrency,
+} from "../utils/donations-api";
 import {
   createProfileComment,
   disputeProfileComment,
@@ -25,6 +29,125 @@ function getPetImageUrl(photoUrl: string) {
   return photoUrl.startsWith("http://") || photoUrl.startsWith("https://")
     ? photoUrl
     : `${getImageBaseUrl()}${photoUrl}`;
+}
+
+const DONATION_PRESETS: Record<DonationCurrency, number[]> = {
+  huf: [1000, 2500, 5000, 10000],
+  eur: [5, 10, 25, 50],
+};
+
+function DonationBox({
+  shelterId,
+  shelterName,
+}: {
+  shelterId: string;
+  shelterName: string;
+}) {
+  const [searchParams] = useSearchParams();
+  const [currency, setCurrency] = useState<DonationCurrency>("huf");
+  const [amount, setAmount] = useState("2500");
+  const [message, setMessage] = useState("");
+  const donationResult = searchParams.get("donation");
+  const mutation = useMutation({
+    mutationFn: () =>
+      createDonationCheckout(shelterId, {
+        amount: Number(amount),
+        currency,
+        message: message.trim() || undefined,
+      }),
+    onSuccess: (data) => {
+      if (data.url) {
+        window.location.assign(data.url);
+      }
+    },
+    onError: (error) =>
+      showError(
+        error instanceof Error ? error.message : "Could not start the donation.",
+      ),
+  });
+
+  return (
+    <section className="rounded-2xl border border-[#fec8e9] bg-[#fff7fb] p-6">
+      <h2 className="text-2xl font-semibold">Support {shelterName}</h2>
+      {donationResult === "success" ? (
+        <p className="mt-3 rounded-xl bg-green-50 p-3 text-sm text-green-900">
+          Thank you! Your donation was received. It may take a moment to appear.
+        </p>
+      ) : null}
+      {donationResult === "cancelled" ? (
+        <p className="mt-3 rounded-xl bg-black/5 p-3 text-sm">
+          The donation was cancelled. You were not charged.
+        </p>
+      ) : null}
+      <p className="mt-2 text-sm leading-6 text-black/65">
+        Pay by card on Stripe's secure page. The money goes directly to the
+        shelter. Floofs never sees your card details.
+      </p>
+      <form
+        className="mt-4 space-y-4"
+        onSubmit={(event) => {
+          event.preventDefault();
+          mutation.mutate();
+        }}
+      >
+        <div className="flex flex-wrap gap-2">
+          {DONATION_PRESETS[currency].map((preset) => (
+            <button
+              key={preset}
+              type="button"
+              onClick={() => setAmount(String(preset))}
+              className={`rounded-full border px-4 py-2 text-sm ${
+                amount === String(preset)
+                  ? "border-black bg-black text-white"
+                  : "border-black/15 bg-white"
+              }`}
+            >
+              {preset} {currency.toUpperCase()}
+            </button>
+          ))}
+        </div>
+        <div className="flex gap-3">
+          <input
+            type="number"
+            min={1}
+            step={1}
+            required
+            value={amount}
+            onChange={(event) => setAmount(event.target.value)}
+            className="w-full rounded-xl border border-black/10 bg-white px-4 py-3 outline-none focus:border-black/35"
+            aria-label="Donation amount"
+          />
+          <select
+            value={currency}
+            onChange={(event) => {
+              const next = event.target.value as DonationCurrency;
+              setCurrency(next);
+              setAmount(String(DONATION_PRESETS[next][1]));
+            }}
+            className="rounded-xl border border-black/10 bg-white px-3"
+            aria-label="Currency"
+          >
+            <option value="huf">HUF</option>
+            <option value="eur">EUR</option>
+          </select>
+        </div>
+        <input
+          maxLength={300}
+          value={message}
+          onChange={(event) => setMessage(event.target.value)}
+          placeholder="Optional message for the shelter"
+          className="w-full rounded-xl border border-black/10 bg-white px-4 py-3 outline-none focus:border-black/35"
+        />
+        <button
+          type="submit"
+          disabled={mutation.isPending}
+          className="rounded-full bg-[#fec8e9] px-6 py-3 text-sm font-semibold disabled:opacity-50"
+        >
+          {mutation.isPending ? "Redirecting to Stripe..." : "Donate by card"}
+        </button>
+      </form>
+    </section>
+  );
 }
 
 function PetList({
@@ -311,43 +434,8 @@ export default function ProfilePage() {
           </div>
         </header>
         <div className="mt-10 space-y-10">
-          {shelterProfile?.donationIban ||
-          shelterProfile?.paypalDonationUrl ||
-          shelterProfile?.donationUrl ? (
-            <section className="rounded-2xl border border-[#fec8e9] bg-[#fff7fb] p-6">
-              <h2 className="text-2xl font-semibold">Support this shelter</h2>
-              <p className="mt-2 text-sm leading-6 text-black/65">
-                Donations are completed directly with the shelter's chosen
-                provider. Floofs does not process or store payment details.
-              </p>
-              <div className="mt-4 flex flex-wrap gap-3">
-                {shelterProfile.donationIban ? (
-                  <span className="rounded-full border border-black/10 bg-white px-4 py-2 text-sm">
-                    IBAN: {shelterProfile.donationIban}
-                  </span>
-                ) : null}
-                {shelterProfile.paypalDonationUrl ? (
-                  <a
-                    href={shelterProfile.paypalDonationUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="rounded-full bg-black px-4 py-2 text-sm font-medium text-white"
-                  >
-                    Donate with PayPal
-                  </a>
-                ) : null}
-                {shelterProfile.donationUrl ? (
-                  <a
-                    href={shelterProfile.donationUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="rounded-full border border-black/15 bg-white px-4 py-2 text-sm font-medium"
-                  >
-                    {shelterProfile.donationUrlLabel || "Donate"}
-                  </a>
-                ) : null}
-              </div>
-            </section>
+          {shelterProfile?.stripeChargesEnabled && !isProfileOwner ? (
+            <DonationBox shelterId={id} shelterName={displayName} />
           ) : null}
           <PetList title="Current listings" pets={profile.currentListings} />
           <PetList title="Previous pets" pets={profile.previousPets} />

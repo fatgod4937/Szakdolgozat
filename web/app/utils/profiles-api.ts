@@ -48,10 +48,7 @@ export type ShelterProfile = {
   contactEmail?: string | null;
   websiteUrl?: string | null;
   isVerified: boolean;
-  donationIban?: string | null;
-  paypalDonationUrl?: string | null;
-  donationUrl?: string | null;
-  donationUrlLabel?: string | null;
+  stripeChargesEnabled?: boolean;
   owner?: {
     id: string;
     email: string;

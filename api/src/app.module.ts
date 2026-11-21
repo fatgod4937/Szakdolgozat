@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { AdminModule } from './admin/admin.module';
 import { AuthModule } from './auth/auth.module';
 import { ChatModule } from './chat/chat.module';
+import { DonationsModule } from './donations/donations.module';
 import { PetsModule } from './pets/pets.module';
 import { ProfilesModule } from './profiles/profiles.module';
 import { PrismaModule } from './prisma/prisma.module';
@@ -24,6 +25,7 @@ import { WebhooksModule } from './webhooks/webhooks.module';
     SheltersModule,
     PetsModule,
     ProfilesModule,
+    DonationsModule,
     WebhooksModule,
   ],
 })

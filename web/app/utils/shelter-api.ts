@@ -1,4 +1,4 @@
-import { getJson, patchJson, postFormData } from "./api";
+import { getJson, postFormData } from "./api";
 
 export type ShelterDocument = {
   id: string;
@@ -20,27 +20,6 @@ export type ShelterApplication = {
   reviewedAt?: string | null;
   documents: ShelterDocument[];
 };
-
-export type ShelterDonationSettings = {
-  id: string;
-  donationIban?: string | null;
-  paypalDonationUrl?: string | null;
-  donationUrl?: string | null;
-  donationUrlLabel?: string | null;
-};
-
-export function getMyDonationSettings() {
-  return getJson<ShelterDonationSettings>("/shelters/me/donation-settings");
-}
-
-export function updateMyDonationSettings(
-  settings: Omit<ShelterDonationSettings, "id">,
-) {
-  return patchJson<ShelterDonationSettings>(
-    "/shelters/me/donation-settings",
-    settings,
-  );
-}
 
 export function getMyShelterApplication() {
   return getJson<ShelterApplication>("/shelters/me/application");

@@ -27,11 +27,6 @@ type JwtRequest = Request & { user?: JwtAuthUser };
 export class SheltersController {
   constructor(private readonly sheltersService: SheltersService) {}
 
-  @Get('me/donation-settings')
-  getDonationSettings(@Req() request: JwtRequest) {
-    return this.sheltersService.getDonationSettings(request.user?.sub ?? '');
-  }
-
   @Get('me/application')
   getMyApplication(@Req() request: JwtRequest) {
     return this.sheltersService.getMyApplication(request.user?.sub ?? '');
@@ -60,23 +55,6 @@ export class SheltersController {
       request.user?.sub ?? '',
       details,
       files,
-    );
-  }
-
-  @Patch('me/donation-settings')
-  updateDonationSettings(
-    @Req() request: JwtRequest,
-    @Body()
-    settings: {
-      donationIban?: string | null;
-      paypalDonationUrl?: string | null;
-      donationUrl?: string | null;
-      donationUrlLabel?: string | null;
-    },
-  ) {
-    return this.sheltersService.updateDonationSettings(
-      request.user?.sub ?? '',
-      settings,
     );
   }
 

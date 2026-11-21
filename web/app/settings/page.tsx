@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { clearAuthTokens } from "../utils/token-storage";
 import { hashPassword } from "../utils/hash-password";
 import {
@@ -44,7 +44,10 @@ export default function SettingsPage() {
     queryFn: getCurrentUser,
   });
   const navigate = useNavigate();
-  const [section, setSection] = useState<SettingsSection>("profile");
+  const [searchParams] = useSearchParams();
+  const [section, setSection] = useState<SettingsSection>(
+    searchParams.get("section") === "donations" ? "donations" : "profile",
+  );
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
@@ -86,7 +89,7 @@ export default function SettingsPage() {
             {
               id: "donations" as const,
               label: "Donations",
-              hint: "Bank transfer and external donation links",
+              hint: "Accept card donations with Stripe",
             },
           ]
         : []),
@@ -308,7 +311,9 @@ export default function SettingsPage() {
               />
             ) : null}
             {section === "notifications" ? <NotificationSettingsForm /> : null}
-            {section === "donations" ? <DonationSettingsForm /> : null}
+            {section === "donations" && userQuery.data?.role === "SHELTER" ? (
+              <DonationSettingsForm />
+            ) : null}
             {section === "email" ? (
               <EmailForm
                 email={email}

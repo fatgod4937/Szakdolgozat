@@ -1,125 +1,153 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useSearchParams } from "react-router-dom";
 import {
-  getMyDonationSettings,
-  updateMyDonationSettings,
-} from "../../utils/shelter-api";
-import { showError, showSuccess } from "../../utils/notification";
+  getStripeStatus,
+  listReceivedDonations,
+  openStripeDashboard,
+  startStripeOnboarding,
+} from "../../utils/donations-api";
+import { showError } from "../../utils/notification";
+
+function formatAmount(amount: number, currency: string) {
+  return new Intl.NumberFormat(undefined, {
+    style: "currency",
+    currency: currency.toUpperCase(),
+    maximumFractionDigits: 0,
+  }).format(amount / 100);
+}
 
 export default function DonationSettingsForm() {
   const queryClient = useQueryClient();
-  const settingsQuery = useQuery({
-    queryKey: ["my-shelter-donation-settings"],
-    queryFn: getMyDonationSettings,
+  const [searchParams] = useSearchParams();
+  const statusQuery = useQuery({
+    queryKey: ["stripe-status"],
+    queryFn: getStripeStatus,
+    retry: false,
   });
-  const [donationIban, setDonationIban] = useState("");
-  const [paypalDonationUrl, setPaypalDonationUrl] = useState("");
-  const [donationUrl, setDonationUrl] = useState("");
-  const [donationUrlLabel, setDonationUrlLabel] = useState("");
+  const receivedQuery = useQuery({
+    queryKey: ["received-donations"],
+    queryFn: listReceivedDonations,
+    enabled: statusQuery.data?.chargesEnabled === true,
+  });
 
+  // Coming back from Stripe: refresh the status from the API.
   useEffect(() => {
-    if (!settingsQuery.data) {
-      return;
+    if (searchParams.get("stripe")) {
+      void queryClient.invalidateQueries({ queryKey: ["stripe-status"] });
     }
+  }, [queryClient, searchParams]);
 
-    setDonationIban(settingsQuery.data.donationIban ?? "");
-    setPaypalDonationUrl(settingsQuery.data.paypalDonationUrl ?? "");
-    setDonationUrl(settingsQuery.data.donationUrl ?? "");
-    setDonationUrlLabel(settingsQuery.data.donationUrlLabel ?? "");
-  }, [settingsQuery.data]);
-
-  const mutation = useMutation({
-    mutationFn: updateMyDonationSettings,
-    onSuccess: () => {
-      void queryClient.invalidateQueries({
-        queryKey: ["my-shelter-donation-settings"],
-      });
-      void queryClient.invalidateQueries({ queryKey: ["profile"] });
-      showSuccess("Donation settings saved.");
-    },
-    onError: (error) =>
-      showError(
-        error instanceof Error
-          ? error.message
-          : "Could not save donation settings.",
-      ),
+  const onError = (error: unknown) =>
+    showError(
+      error instanceof Error ? error.message : "Something went wrong.",
+    );
+  const onboardingMutation = useMutation({
+    mutationFn: startStripeOnboarding,
+    onSuccess: (data) => window.location.assign(data.url),
+    onError,
+  });
+  const dashboardMutation = useMutation({
+    mutationFn: openStripeDashboard,
+    onSuccess: (data) => window.open(data.url, "_blank", "noopener"),
+    onError,
   });
 
-  if (settingsQuery.isPending) {
+  if (statusQuery.isPending) {
     return null;
   }
 
-  if (settingsQuery.isError) {
+  if (statusQuery.isError) {
     return (
       <p className="mt-6 text-sm leading-6 text-red-700">
-        This shelter account is not linked to a shelter profile yet.
+        {statusQuery.error instanceof Error
+          ? statusQuery.error.message
+          : "Could not load donation settings."}
       </p>
     );
   }
 
+  const status = statusQuery.data;
+  const buttonClass =
+    "rounded-full bg-[#fec8e9] px-5 py-3 text-sm font-semibold disabled:opacity-50";
+
   return (
-    <form
-      className="mt-6 space-y-5"
-      onSubmit={(event) => {
-        event.preventDefault();
-        mutation.mutate({
-          donationIban,
-          paypalDonationUrl,
-          donationUrl,
-          donationUrlLabel,
-        });
-      }}
-    >
+    <div className="mt-6 space-y-6">
       <p className="text-sm leading-6 text-black/60">
-        Floofs only displays these details. Donations are completed directly
-        with your bank or chosen provider; no payment credentials are stored.
+        Accept card donations through Stripe. Donors pay on Stripe's secure
+        page and the money goes to your Stripe account. Floofs never sees or
+        stores card details.
       </p>
-      <label className="block space-y-2">
-        <span className="text-sm font-medium">Bank-transfer IBAN</span>
-        <input
-          value={donationIban}
-          onChange={(event) => setDonationIban(event.target.value)}
-          className="w-full rounded-lg border border-black/10 bg-white px-4 py-3 outline-none focus:border-black/35"
-          placeholder="HU12 1234 1234 1234 1234 1234 1234"
-        />
-      </label>
-      <label className="block space-y-2">
-        <span className="text-sm font-medium">PayPal donation URL</span>
-        <input
-          type="url"
-          value={paypalDonationUrl}
-          onChange={(event) => setPaypalDonationUrl(event.target.value)}
-          className="w-full rounded-lg border border-black/10 bg-white px-4 py-3 outline-none focus:border-black/35"
-          placeholder="https://paypal.me/your-shelter"
-        />
-      </label>
-      <label className="block space-y-2">
-        <span className="text-sm font-medium">Other donation URL</span>
-        <input
-          type="url"
-          value={donationUrl}
-          onChange={(event) => setDonationUrl(event.target.value)}
-          className="w-full rounded-lg border border-black/10 bg-white px-4 py-3 outline-none focus:border-black/35"
-          placeholder="https://example.org/donate"
-        />
-      </label>
-      <label className="block space-y-2">
-        <span className="text-sm font-medium">Other donation link label</span>
-        <input
-          maxLength={80}
-          value={donationUrlLabel}
-          onChange={(event) => setDonationUrlLabel(event.target.value)}
-          className="w-full rounded-lg border border-black/10 bg-white px-4 py-3 outline-none focus:border-black/35"
-          placeholder="Donate through our campaign"
-        />
-      </label>
-      <button
-        type="submit"
-        disabled={mutation.isPending}
-        className="rounded-full bg-[#fec8e9] px-5 py-3 text-sm font-semibold disabled:opacity-50"
-      >
-        Save donation settings
-      </button>
-    </form>
+
+      {!status.configured ? (
+        <p className="rounded-2xl border border-black/10 bg-black/5 p-4 text-sm">
+          Card donations are not enabled on this server yet.
+        </p>
+      ) : !status.isVerified ? (
+        <p className="rounded-2xl border border-black/10 bg-black/5 p-4 text-sm">
+          Your shelter must be approved by an administrator before you can
+          accept donations.
+        </p>
+      ) : status.chargesEnabled ? (
+        <div className="space-y-4">
+          <p className="rounded-2xl border border-green-700/25 bg-green-50 p-4 text-sm text-green-900">
+            Your Stripe account is active. Donors can now give from your
+            shelter profile.
+          </p>
+          <button
+            type="button"
+            className={buttonClass}
+            disabled={dashboardMutation.isPending}
+            onClick={() => dashboardMutation.mutate()}
+          >
+            Open Stripe dashboard (payouts)
+          </button>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          <p className="rounded-2xl border border-[#aa2f75]/30 bg-[#fff3f8] p-4 text-sm">
+            {status.connected
+              ? status.detailsSubmitted
+                ? "Stripe is still reviewing your details. Check back in a little while."
+                : "Your Stripe setup is not finished yet. Continue where you left off."
+              : "Connect a Stripe account to start accepting donations."}
+          </p>
+          <button
+            type="button"
+            className={buttonClass}
+            disabled={onboardingMutation.isPending}
+            onClick={() => onboardingMutation.mutate()}
+          >
+            {status.connected ? "Continue Stripe setup" : "Set up donations"}
+          </button>
+        </div>
+      )}
+
+      {status.chargesEnabled ? (
+        <section>
+          <h3 className="font-semibold">Recent donations</h3>
+          {receivedQuery.data && receivedQuery.data.length > 0 ? (
+            <ul className="mt-3 divide-y divide-black/10 rounded-2xl border border-black/10 bg-white">
+              {receivedQuery.data.map((donation) => (
+                <li key={donation.id} className="p-4 text-sm">
+                  <span className="font-semibold">
+                    {formatAmount(donation.amount, donation.currency)}
+                  </span>{" "}
+                  from {donation.donor?.firstName ?? "an anonymous donor"}
+                  {donation.paidAt
+                    ? ` · ${new Date(donation.paidAt).toLocaleDateString()}`
+                    : ""}
+                  {donation.message ? (
+                    <p className="mt-1 text-black/60">“{donation.message}”</p>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-3 text-sm text-black/60">No donations yet.</p>
+          )}
+        </section>
+      ) : null}
+    </div>
   );
 }
