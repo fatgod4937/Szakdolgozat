@@ -66,87 +66,142 @@ function DonationBox({
       ),
   });
 
+  const [open, setOpen] = useState(false);
+  const [thanksOpen, setThanksOpen] = useState(donationResult === "success");
+
   return (
-    <section className="rounded-2xl border border-[#fec8e9] bg-[#fff7fb] p-6">
-      <h2 className="text-2xl font-semibold">Support {shelterName}</h2>
-      {donationResult === "success" ? (
-        <p className="mt-3 rounded-xl bg-green-50 p-3 text-sm text-green-900">
-          Thank you! Your donation was received. It may take a moment to appear.
-        </p>
-      ) : null}
-      {donationResult === "cancelled" ? (
-        <p className="mt-3 rounded-xl bg-black/5 p-3 text-sm">
-          The donation was cancelled. You were not charged.
-        </p>
-      ) : null}
-      <p className="mt-2 text-sm leading-6 text-black/65">
-        Pay by card on Stripe's secure page. The money goes directly to the
-        shelter. Floofs never sees your card details.
-      </p>
-      <form
-        className="mt-4 space-y-4"
-        onSubmit={(event) => {
-          event.preventDefault();
-          mutation.mutate();
-        }}
-      >
-        <div className="flex flex-wrap gap-2">
-          {DONATION_PRESETS[currency].map((preset) => (
-            <button
-              key={preset}
-              type="button"
-              onClick={() => setAmount(String(preset))}
-              className={`rounded-full border px-4 py-2 text-sm ${
-                amount === String(preset)
-                  ? "border-black bg-black text-white"
-                  : "border-black/15 bg-white"
-              }`}
-            >
-              {preset} {currency.toUpperCase()}
-            </button>
-          ))}
-        </div>
-        <div className="flex gap-3">
-          <input
-            type="number"
-            min={1}
-            step={1}
-            required
-            value={amount}
-            onChange={(event) => setAmount(event.target.value)}
-            className="w-full rounded-xl border border-black/10 bg-white px-4 py-3 outline-none focus:border-black/35"
-            aria-label="Donation amount"
-          />
-          <select
-            value={currency}
-            onChange={(event) => {
-              const next = event.target.value as DonationCurrency;
-              setCurrency(next);
-              setAmount(String(DONATION_PRESETS[next][1]));
-            }}
-            className="rounded-xl border border-black/10 bg-white px-3"
-            aria-label="Currency"
-          >
-            <option value="huf">HUF</option>
-            <option value="eur">EUR</option>
-          </select>
-        </div>
-        <input
-          maxLength={300}
-          value={message}
-          onChange={(event) => setMessage(event.target.value)}
-          placeholder="Optional message for the shelter"
-          className="w-full rounded-xl border border-black/10 bg-white px-4 py-3 outline-none focus:border-black/35"
-        />
-        <button
-          type="submit"
-          disabled={mutation.isPending}
-          className="rounded-full bg-[#fec8e9] px-6 py-3 text-sm font-semibold disabled:opacity-50"
+    <div className="flex flex-wrap items-center gap-3">
+      {thanksOpen ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          onClick={() => setThanksOpen(false)}
         >
-          {mutation.isPending ? "Redirecting to Stripe..." : "Donate by card"}
-        </button>
-      </form>
-    </section>
+          <section
+            role="dialog"
+            aria-modal="true"
+            className="w-full max-w-sm rounded-2xl bg-white p-6 text-center shadow-xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <p className="text-4xl">🐾</p>
+            <h2 className="mt-2 text-xl font-semibold">Thank you!</h2>
+            <p className="mt-2 text-sm leading-6 text-black/65">
+              Your donation to {shelterName} was received. It may take a moment
+              to appear in their list. You're helping animals find a home.
+            </p>
+            <button
+              type="button"
+              onClick={() => setThanksOpen(false)}
+              className="mt-4 rounded-full bg-[#fec8e9] px-6 py-2 text-sm font-semibold"
+            >
+              Close
+            </button>
+          </section>
+        </div>
+      ) : null}      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="rounded-full bg-[#fec8e9] px-5 py-2 text-sm font-semibold"
+      >
+        Donate
+      </button>
+      {donationResult === "cancelled" ? (
+        <span className="rounded-full bg-black/5 px-3 py-1 text-sm">
+          Donation cancelled. You were not charged.
+        </span>
+      ) : null}
+      {open ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          onClick={() => setOpen(false)}
+        >
+          <section
+            role="dialog"
+            aria-modal="true"
+            className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <h2 className="text-lg font-semibold">Support {shelterName}</h2>
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="text-xl leading-none text-black/50"
+                aria-label="Close"
+              >
+                Ã—
+              </button>
+            </div>
+            <p className="mt-1 text-xs leading-5 text-black/60">
+              Pay by card on Stripe's secure page. Floofs never sees your card
+              details.
+            </p>
+            <form
+              className="mt-3 space-y-3"
+              onSubmit={(event) => {
+                event.preventDefault();
+                mutation.mutate();
+              }}
+            >
+              <div className="flex flex-wrap gap-2">
+                {DONATION_PRESETS[currency].map((preset) => (
+                  <button
+                    key={preset}
+                    type="button"
+                    onClick={() => setAmount(String(preset))}
+                    className={`rounded-full border px-3 py-1 text-sm ${
+                      amount === String(preset)
+                        ? "border-black bg-black text-white"
+                        : "border-black/15 bg-white"
+                    }`}
+                  >
+                    {preset}
+                  </button>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <input
+                  type="number"
+                  min={1}
+                  step={1}
+                  required
+                  value={amount}
+                  onChange={(event) => setAmount(event.target.value)}
+                  className="w-full rounded-xl border border-black/10 px-3 py-2 outline-none focus:border-black/35"
+                  aria-label="Donation amount"
+                />
+                <select
+                  value={currency}
+                  onChange={(event) => {
+                    const next = event.target.value as DonationCurrency;
+                    setCurrency(next);
+                    setAmount(String(DONATION_PRESETS[next][1]));
+                  }}
+                  className="rounded-xl border border-black/10 px-2"
+                  aria-label="Currency"
+                >
+                  <option value="huf">HUF</option>
+                  <option value="eur">EUR</option>
+                </select>
+              </div>
+              <input
+                maxLength={300}
+                value={message}
+                onChange={(event) => setMessage(event.target.value)}
+                placeholder="Optional message"
+                className="w-full rounded-xl border border-black/10 px-3 py-2 text-sm outline-none focus:border-black/35"
+              />
+              <button
+                type="submit"
+                disabled={mutation.isPending}
+                className="w-full rounded-full bg-[#fec8e9] px-5 py-2 text-sm font-semibold disabled:opacity-50"
+              >
+                {mutation.isPending ? "Redirecting to Stripe..." : "Donate by card"}
+              </button>
+            </form>
+          </section>
+        </div>
+      ) : null}
+    </div>
   );
 }
 

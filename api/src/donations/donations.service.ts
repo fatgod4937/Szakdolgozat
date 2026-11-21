@@ -136,8 +136,8 @@ export class DonationsService {
           transfer_data: { destination: shelter.stripeAccountId },
           ...(platformFee > 0 ? { application_fee_amount: platformFee } : {}),
         },
-        success_url: `${webUrl}/profiles/shelters/${shelter.id}?donation=success`,
-        cancel_url: `${webUrl}/profiles/shelters/${shelter.id}?donation=cancelled`,
+        success_url: `${webUrl}/profiles/shelter/${shelter.id}?donation=success`,
+        cancel_url: `${webUrl}/profiles/shelter/${shelter.id}?donation=cancelled`,
       });
 
       await this.prismaService.donation.update({
