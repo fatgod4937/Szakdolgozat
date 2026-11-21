@@ -173,20 +173,24 @@ export class DonationsService {
 
     try {
       if (!accountId) {
-        const account = await stripe.accounts.create({
-          controller: {
-            stripe_dashboard: { type: 'express' },
-            fees: { payer: 'account' },
-            losses: { payments: 'stripe' },
-            requirement_collection: 'stripe',
+        const account = await stripe.v2.core.accounts.create({
+          contact_email:
+            shelter.contactEmail ?? shelter.owner?.email ?? undefined,
+          display_name: shelter.name,
+          dashboard: 'express',
+          identity: {
+            country: (
+              this.configService.get<string>('STRIPE_ACCOUNT_COUNTRY') ?? 'HU'
+            ).toLowerCase(),
           },
-          country:
-            this.configService.get<string>('STRIPE_ACCOUNT_COUNTRY') ?? 'HU',
-          email: shelter.contactEmail ?? shelter.owner?.email ?? undefined,
-          business_profile: { name: shelter.name },
-          capabilities: {
-            card_payments: { requested: true },
-            transfers: { requested: true },
+          defaults: {
+            responsibilities: {
+              fees_collector: 'application',
+              losses_collector: 'stripe',
+            },
+          },
+          configuration: {
+            merchant: { capabilities: { card_payments: { requested: true } } },
           },
           metadata: { shelterId: shelter.id },
         });
@@ -197,11 +201,15 @@ export class DonationsService {
         });
       }
 
-      const link = await stripe.accountLinks.create({
+      const link = await stripe.v2.core.accountLinks.create({
         account: accountId,
-        type: 'account_onboarding',
-        refresh_url: `${webUrl}/settings?section=donations&stripe=refresh`,
-        return_url: `${webUrl}/settings?section=donations&stripe=return`,
+        use_case: {
+          type: 'account_onboarding',
+          account_onboarding: {
+            refresh_url: `${webUrl}/settings?section=donations&stripe=refresh`,
+            return_url: `${webUrl}/settings?section=donations&stripe=return`,
+          },
+        },
       });
 
       return { url: link.url };
@@ -219,11 +227,15 @@ export class DonationsService {
 
     if (this.isConfigured() && shelter.stripeAccountId) {
       try {
-        const account = await this.getStripe().accounts.retrieve(
+        const account = await this.getStripe().v2.core.accounts.retrieve(
           shelter.stripeAccountId,
+          { include: ['configuration.merchant', 'requirements'] },
         );
-        stripeChargesEnabled = account.charges_enabled === true;
-        stripeDetailsSubmitted = account.details_submitted === true;
+        stripeChargesEnabled =
+          account.configuration?.merchant?.capabilities?.card_payments
+            ?.status === 'active';
+        stripeDetailsSubmitted =
+          !account.requirements?.summary?.minimum_deadline;
         await this.prismaService.shelter.update({
           where: { id: shelter.id },
           data: { stripeChargesEnabled, stripeDetailsSubmitted },
