@@ -174,7 +174,12 @@ export class DonationsService {
     try {
       if (!accountId) {
         const account = await stripe.accounts.create({
-          type: 'express',
+          controller: {
+            stripe_dashboard: { type: 'express' },
+            fees: { payer: 'account' },
+            losses: { payments: 'stripe' },
+            requirement_collection: 'stripe',
+          },
           country:
             this.configService.get<string>('STRIPE_ACCOUNT_COUNTRY') ?? 'HU',
           email: shelter.contactEmail ?? shelter.owner?.email ?? undefined,
