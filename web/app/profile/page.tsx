@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import ImageLightbox from "../components/ImageLightbox";
 import { showError, showSuccess } from "../utils/notification";
 import { getCurrentUser } from "../utils/auth-api";
 import {
@@ -220,9 +221,17 @@ function PetList({
   pets: ProfilePetRecord[];
 }) {
   const { t } = useTranslation();
+  const [viewing, setViewing] = useState<ProfilePetRecord | null>(null);
   return (
     <section>
       <h2 className="text-2xl font-semibold text-black">{title}</h2>
+      {viewing ? (
+        <ImageLightbox
+          images={viewing.photoUrls.map(getPetImageUrl)}
+          alt={viewing.name}
+          onClose={() => setViewing(null)}
+        />
+      ) : null}
       {pets.length === 0 ? (
         <p className="mt-3 text-sm text-black/60">{t("profilePage.noPets")}</p>
       ) : (
@@ -234,11 +243,18 @@ function PetList({
             >
               <div className="aspect-[4/3] bg-black/5">
                 {pet.photoUrls[0] ? (
-                  <img
-                    src={getPetImageUrl(pet.photoUrls[0])}
-                    alt={pet.name}
-                    className="h-full w-full object-cover"
-                  />
+                  <button
+                    type="button"
+                    onClick={() => setViewing(pet)}
+                    className="h-full w-full cursor-zoom-in"
+                    aria-label={t("pets.fullscreen")}
+                  >
+                    <img
+                      src={getPetImageUrl(pet.photoUrls[0])}
+                      alt={pet.name}
+                      className="h-full w-full object-cover"
+                    />
+                  </button>
                 ) : null}
               </div>
               <div className="p-4">

@@ -3,7 +3,8 @@
 import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
-import { Heart, MessageCircle } from "lucide-react";
+import { Heart, Maximize2, MessageCircle } from "lucide-react";
+import ImageLightbox from "../components/ImageLightbox";
 import {
   listBreeds,
   listPets,
@@ -103,6 +104,7 @@ export function PetCard({ pet }: { pet: PetRecord }) {
   const currentUserId = getCurrentUserId();
   const canMessageOwner = Boolean(pet.owner && pet.owner.id !== currentUserId);
   const [activePhotoIndex, setActivePhotoIndex] = useState(0);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const pointerStartX = useRef<number | null>(null);
   const pointerStartY = useRef<number | null>(null);
   const pointerHasMoved = useRef(false);
@@ -289,6 +291,26 @@ export function PetCard({ pet }: { pet: PetRecord }) {
               />
             ))}
           </div>
+        ) : null}
+
+        {activePhotoUrl ? (
+          <button
+            type="button"
+            onClick={() => setIsFullscreen(true)}
+            className="absolute bottom-4 right-4 flex h-11 w-11 items-center justify-center rounded-full bg-white/85 text-black shadow-lg backdrop-blur transition hover:scale-105 hover:bg-white"
+            aria-label={t("pets.fullscreen")}
+            title={t("pets.fullscreen")}
+          >
+            <Maximize2 className="h-5 w-5" />
+          </button>
+        ) : null}
+        {isFullscreen && activePhotoUrl ? (
+          <ImageLightbox
+            images={photoUrls.map(getPetImageUrl)}
+            startIndex={activePhotoIndex}
+            alt={pet.name}
+            onClose={() => setIsFullscreen(false)}
+          />
         ) : null}
 
         <button
