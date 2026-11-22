@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { showError, showSuccess } from "../utils/notification";
 import { getCurrentUser } from "../utils/auth-api";
 import {
@@ -43,6 +44,7 @@ function DonationBox({
   shelterId: string;
   shelterName: string;
 }) {
+  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const [currency, setCurrency] = useState<DonationCurrency>("huf");
   const [amount, setAmount] = useState("2500");
@@ -62,7 +64,7 @@ function DonationBox({
     },
     onError: (error) =>
       showError(
-        error instanceof Error ? error.message : "Could not start the donation.",
+        error instanceof Error ? error.message : t("profilePage.donationError"),
       ),
   });
 
@@ -83,30 +85,32 @@ function DonationBox({
             onClick={(event) => event.stopPropagation()}
           >
             <p className="text-4xl">🐾</p>
-            <h2 className="mt-2 text-xl font-semibold">Thank you!</h2>
+            <h2 className="mt-2 text-xl font-semibold">
+              {t("profilePage.thanksTitle")}
+            </h2>
             <p className="mt-2 text-sm leading-6 text-black/65">
-              Your donation to {shelterName} was received. It may take a moment
-              to appear in their list. You're helping animals find a home.
+              {t("profilePage.thanksBody", { name: shelterName })}
             </p>
             <button
               type="button"
               onClick={() => setThanksOpen(false)}
               className="mt-4 rounded-full bg-[#fec8e9] px-6 py-2 text-sm font-semibold"
             >
-              Close
+              {t("profilePage.close")}
             </button>
           </section>
         </div>
-      ) : null}      <button
+      ) : null}
+      <button
         type="button"
         onClick={() => setOpen(true)}
         className="rounded-full bg-[#fec8e9] px-5 py-2 text-sm font-semibold"
       >
-        Donate
+        {t("profilePage.donate")}
       </button>
       {donationResult === "cancelled" ? (
         <span className="rounded-full bg-black/5 px-3 py-1 text-sm">
-          Donation cancelled. You were not charged.
+          {t("profilePage.donationCancelled")}
         </span>
       ) : null}
       {open ? (
@@ -121,19 +125,20 @@ function DonationBox({
             onClick={(event) => event.stopPropagation()}
           >
             <div className="flex items-start justify-between gap-3">
-              <h2 className="text-lg font-semibold">Support {shelterName}</h2>
+              <h2 className="text-lg font-semibold">
+                {t("profilePage.supportTitle", { name: shelterName })}
+              </h2>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
                 className="text-xl leading-none text-black/50"
-                aria-label="Close"
+                aria-label={t("profilePage.close")}
               >
-                Ã—
+                &times;
               </button>
             </div>
             <p className="mt-1 text-xs leading-5 text-black/60">
-              Pay by card on Stripe's secure page. Floofs never sees your card
-              details.
+              {t("profilePage.stripeNote")}
             </p>
             <form
               className="mt-3 space-y-3"
@@ -167,7 +172,7 @@ function DonationBox({
                   value={amount}
                   onChange={(event) => setAmount(event.target.value)}
                   className="w-full rounded-xl border border-black/10 px-3 py-2 outline-none focus:border-black/35"
-                  aria-label="Donation amount"
+                  aria-label={t("profilePage.amount")}
                 />
                 <select
                   value={currency}
@@ -177,7 +182,7 @@ function DonationBox({
                     setAmount(String(DONATION_PRESETS[next][1]));
                   }}
                   className="rounded-xl border border-black/10 px-2"
-                  aria-label="Currency"
+                  aria-label={t("profilePage.currency")}
                 >
                   <option value="huf">HUF</option>
                   <option value="eur">EUR</option>
@@ -187,7 +192,7 @@ function DonationBox({
                 maxLength={300}
                 value={message}
                 onChange={(event) => setMessage(event.target.value)}
-                placeholder="Optional message"
+                placeholder={t("profilePage.optionalMessage")}
                 className="w-full rounded-xl border border-black/10 px-3 py-2 text-sm outline-none focus:border-black/35"
               />
               <button
@@ -195,7 +200,9 @@ function DonationBox({
                 disabled={mutation.isPending}
                 className="w-full rounded-full bg-[#fec8e9] px-5 py-2 text-sm font-semibold disabled:opacity-50"
               >
-                {mutation.isPending ? "Redirecting to Stripe..." : "Donate by card"}
+                {mutation.isPending
+                  ? t("profilePage.redirecting")
+                  : t("profilePage.donateByCard")}
               </button>
             </form>
           </section>
@@ -212,11 +219,12 @@ function PetList({
   title: string;
   pets: ProfilePetRecord[];
 }) {
+  const { t } = useTranslation();
   return (
     <section>
       <h2 className="text-2xl font-semibold text-black">{title}</h2>
       {pets.length === 0 ? (
-        <p className="mt-3 text-sm text-black/60">No pets to show yet.</p>
+        <p className="mt-3 text-sm text-black/60">{t("profilePage.noPets")}</p>
       ) : (
         <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {pets.map((pet) => (
@@ -254,6 +262,7 @@ function Comments({
   targetId: string;
   isProfileOwner: boolean;
 }) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [content, setContent] = useState("");
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
@@ -281,17 +290,17 @@ function Comments({
       refreshComments();
     },
     onError: (error) =>
-      showError(error instanceof Error ? error.message : "Could not post comment."),
+      showError(error instanceof Error ? error.message : t("profilePage.commentError")),
   });
   const disputeMutation = useMutation({
     mutationFn: ({ id, reason }: { id: string; reason: string }) =>
       disputeProfileComment(id, reason),
     onSuccess: () => {
-      showSuccess("Comment submitted for administrator review.");
+      showSuccess(t("profilePage.disputeSubmitted"));
       refreshComments();
     },
     onError: (error) =>
-      showError(error instanceof Error ? error.message : "Could not dispute comment."),
+      showError(error instanceof Error ? error.message : t("profilePage.disputeError")),
   });
   const comments = commentsQuery.data ?? [];
 
@@ -315,7 +324,7 @@ function Comments({
             onClick={() => setReplyingTo(comment.id)}
             className="text-sm font-medium text-[#aa2f75] hover:underline"
           >
-            Reply
+            {t("profilePage.reply")}
           </button>
         ) : null}
       </div>
@@ -326,19 +335,19 @@ function Comments({
         <button
           type="button"
           onClick={() => {
-            const reason = window.prompt("Why should this comment be reviewed?");
+            const reason = window.prompt(t("profilePage.disputePrompt"));
             if (reason?.trim()) {
               disputeMutation.mutate({ id: comment.id, reason });
             }
           }}
           className="mt-3 text-sm text-black/60 hover:text-black hover:underline"
         >
-          Dispute comment
+          {t("profilePage.disputeComment")}
         </button>
       ) : null}
       {comment.disputeStatus === "OPEN" ? (
         <p className="mt-3 text-xs font-medium text-[#aa2f75]">
-          Under administrator review
+          {t("profilePage.underReview")}
         </p>
       ) : null}
       {!isReply && replyingTo === comment.id ? (
@@ -355,7 +364,7 @@ function Comments({
             value={replyContent}
             onChange={(event) => setReplyContent(event.target.value)}
             className="min-h-20 w-full rounded-lg border border-black/10 p-3 text-sm"
-            placeholder="Write a reply"
+            placeholder={t("profilePage.writeReply")}
           />
           <div className="flex gap-3">
             <button
@@ -363,14 +372,14 @@ function Comments({
               disabled={commentMutation.isPending}
               className="rounded-full bg-black px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
             >
-              Reply
+              {t("profilePage.reply")}
             </button>
             <button
               type="button"
               onClick={() => setReplyingTo(null)}
               className="rounded-full border border-black/15 px-4 py-2 text-sm"
             >
-              Cancel
+              {t("profilePage.cancel")}
             </button>
           </div>
         </form>
@@ -381,7 +390,7 @@ function Comments({
 
   return (
     <section className="border-t border-black/10 pt-8">
-      <h2 className="text-2xl font-semibold text-black">Comments</h2>
+      <h2 className="text-2xl font-semibold text-black">{t("profilePage.comments")}</h2>
       <form
         className="mt-4 space-y-3"
         onSubmit={(event) => {
@@ -395,20 +404,20 @@ function Comments({
           value={content}
           onChange={(event) => setContent(event.target.value)}
           className="min-h-24 w-full rounded-xl border border-black/10 bg-white p-3 text-sm"
-          placeholder="Write a comment"
+          placeholder={t("profilePage.writeComment")}
         />
         <button
           type="submit"
           disabled={commentMutation.isPending}
           className="rounded-full bg-[#fec8e9] px-5 py-3 text-sm font-semibold disabled:opacity-50"
         >
-          Post comment
+          {t("profilePage.postComment")}
         </button>
       </form>
       <div className="mt-6 space-y-4">
         {comments.map((comment) => renderComment(comment))}
         {!commentsQuery.isPending && comments.length === 0 ? (
-          <p className="text-sm text-black/60">No comments yet.</p>
+          <p className="text-sm text-black/60">{t("profilePage.noComments")}</p>
         ) : null}
       </div>
     </section>
@@ -416,6 +425,7 @@ function Comments({
 }
 
 export default function ProfilePage() {
+  const { t } = useTranslation();
   const { type, id } = useParams<{ type: "user" | "shelter"; id: string }>();
   const targetType = type === "shelter" ? "SHELTER" : "USER";
   const profileQuery = useQuery<UserProfile | ShelterProfile>({
@@ -431,7 +441,7 @@ export default function ProfilePage() {
 
   if (profileQuery.isPending) return null;
   if (profileQuery.isError || !profileQuery.data || !id) {
-    return <p className="px-6 pt-32 text-center">Profile could not be loaded.</p>;
+    return <p className="px-6 pt-32 text-center">{t("profilePage.loadError")}</p>;
   }
 
   const isShelter = targetType === "SHELTER";
@@ -464,7 +474,7 @@ export default function ProfilePage() {
     <section className="min-h-screen bg-[#fffdf9] px-4 pb-20 pt-[calc(6rem+env(safe-area-inset-top))] sm:px-6 lg:px-10">
       <div className="mx-auto max-w-6xl">
         <Link to="/pets" className="text-sm font-medium text-[#aa2f75] hover:underline">
-          Back to listings
+          {t("profilePage.back")}
         </Link>
         <header className="mt-5 flex flex-col gap-5 rounded-3xl border border-black/10 bg-white p-6 shadow-sm sm:flex-row sm:items-center">
           {photo ? (
@@ -477,7 +487,7 @@ export default function ProfilePage() {
           <div className="min-w-0">
             <h1 className="text-3xl font-semibold">{displayName}</h1>
             {shelterProfile?.isVerified ? (
-              <p className="mt-1 text-sm font-medium text-[#aa2f75]">Verified shelter</p>
+              <p className="mt-1 text-sm font-medium text-[#aa2f75]">{t("profilePage.verifiedShelter")}</p>
             ) : null}
             {bio ? <p className="mt-3 max-w-3xl whitespace-pre-wrap text-black/70">{bio}</p> : null}
             <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-sm text-black/65">
@@ -492,8 +502,8 @@ export default function ProfilePage() {
           {shelterProfile?.stripeChargesEnabled && !isProfileOwner ? (
             <DonationBox shelterId={id} shelterName={displayName} />
           ) : null}
-          <PetList title="Current listings" pets={profile.currentListings} />
-          <PetList title="Previous pets" pets={profile.previousPets} />
+          <PetList title={t("profilePage.currentListings")} pets={profile.currentListings} />
+          <PetList title={t("profilePage.previousPets")} pets={profile.previousPets} />
           <Comments targetType={targetType} targetId={id} isProfileOwner={isProfileOwner} />
         </div>
       </div>
