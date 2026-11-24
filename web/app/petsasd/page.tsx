@@ -173,7 +173,6 @@ export function PetCard({ pet }: { pet: PetRecord }) {
 
     pointerStartX.current = null;
     pointerStartY.current = null;
-    pointerHasMoved.current = false;
   };
 
   const traits = [
@@ -193,26 +192,6 @@ export function PetCard({ pet }: { pet: PetRecord }) {
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
-        onClick={(event) => {
-          if ((event.target as HTMLElement).closest("button")) {
-            return;
-          }
-
-          const bounds = event.currentTarget.getBoundingClientRect();
-          const clickX = event.clientX - bounds.left;
-
-          if (hasMultiplePhotos && !pointerHasMoved.current) {
-            if (clickX < bounds.width / 2) {
-              goToPreviousPhoto();
-              return;
-            }
-
-            if (clickX > bounds.width / 2) {
-              goToNextPhoto();
-              return;
-            }
-          }
-        }}
       >
         {hasMultiplePhotos && activePhotoUrl ? (
           <div
@@ -249,7 +228,27 @@ export function PetCard({ pet }: { pet: PetRecord }) {
           </div>
         )}
 
-        <div className="absolute inset-0 bg-gradient-to-t from-black/28 via-black/0 to-black/10 opacity-80" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/28 via-black/0 to-black/10 opacity-80" />
+
+        {activePhotoUrl ? (
+          <button
+            type="button"
+            onClick={(event) => {
+              if (!pointerHasMoved.current || event.detail === 0) {
+                setIsFullscreen(true);
+              }
+            }}
+            className="absolute inset-0 w-full cursor-zoom-in focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-white"
+            aria-label={t("pets.fullscreen")}
+            title={t("pets.fullscreen")}
+          >
+            <span
+              className={`absolute bottom-4 ${canMessageOwner ? "right-[4.5rem]" : "right-4"} flex h-11 w-11 items-center justify-center rounded-full bg-white/85 text-black shadow-lg backdrop-blur`}
+            >
+              <Maximize2 className="h-5 w-5" />
+            </span>
+          </button>
+        ) : null}
 
         <div className="absolute inset-x-0 top-0 flex items-start justify-between p-6">
           <span className="rounded-full bg-white/85 px-3 py-1 text-xs font-semibold text-black shadow-sm backdrop-blur">
@@ -291,26 +290,6 @@ export function PetCard({ pet }: { pet: PetRecord }) {
               />
             ))}
           </div>
-        ) : null}
-
-        {activePhotoUrl ? (
-          <button
-            type="button"
-            onClick={() => setIsFullscreen(true)}
-            className="absolute bottom-4 right-4 flex h-11 w-11 items-center justify-center rounded-full bg-white/85 text-black shadow-lg backdrop-blur transition hover:scale-105 hover:bg-white"
-            aria-label={t("pets.fullscreen")}
-            title={t("pets.fullscreen")}
-          >
-            <Maximize2 className="h-5 w-5" />
-          </button>
-        ) : null}
-        {isFullscreen && activePhotoUrl ? (
-          <ImageLightbox
-            images={photoUrls.map(getPetImageUrl)}
-            startIndex={activePhotoIndex}
-            alt={pet.name}
-            onClose={() => setIsFullscreen(false)}
-          />
         ) : null}
 
         <button
@@ -369,6 +348,14 @@ export function PetCard({ pet }: { pet: PetRecord }) {
           </>
         ) : null}
       </div>
+      {isFullscreen && activePhotoUrl ? (
+        <ImageLightbox
+          images={photoUrls.map(getPetImageUrl)}
+          startIndex={activePhotoIndex}
+          alt={pet.name}
+          onClose={() => setIsFullscreen(false)}
+        />
+      ) : null}
       {pet.owner ? (
         <Link
           to={

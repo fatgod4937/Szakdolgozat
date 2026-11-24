@@ -22,6 +22,7 @@ import {
   type SpeciesRecord,
 } from "../utils/pets-api";
 import { useTranslation } from "react-i18next";
+import ImageLightbox from "../components/ImageLightbox";
 
 type PetFormValues = {
   name: string;
@@ -151,6 +152,7 @@ export default function PetsCreatePage() {
   const [selectedLocation, setSelectedLocation] =
     useState<LocationSuggestion | null>(null);
   const [existingPhotoUrls, setExistingPhotoUrls] = useState<string[]>([]);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   const petForm = useForm<PetFormValues>({
     mode: "onBlur",
@@ -378,23 +380,7 @@ export default function PetsCreatePage() {
     const selectedPhotoIndex = index - existingPhotoUrls.length;
     const file = selectedPhotos[selectedPhotoIndex];
     const preview = photoPreviews[selectedPhotoIndex];
-
-    if (existingPhotoUrl) {
-      return (
-        <div
-          key={existingPhotoUrl}
-          className="aspect-[4/4.8] overflow-hidden rounded-[1.5rem] border border-black/10 bg-black/5 shadow-sm"
-        >
-          <img
-            src={`${import.meta.env.VITE_API_URL.replace(/\/api\/?$/, "")}${existingPhotoUrl}`}
-            alt={t("petForm.uploadedPhoto", { index: index + 1 })}
-            className="h-full w-full object-cover"
-          />
-        </div>
-      );
-    }
-
-    if (!file) {
+    if (!existingPhotoUrl && !file) {
       return (
         <button
           key={`empty-${index}`}
@@ -409,24 +395,41 @@ export default function PetsCreatePage() {
       );
     }
 
+    const photoUrl = existingPhotoUrl
+      ? `${import.meta.env.VITE_API_URL.replace(/\/api\/?$/, "")}${existingPhotoUrl}`
+      : preview;
+    const photoLabel = t("petForm.uploadedPhoto", { index: index + 1 });
+
     return (
       <div
-        key={`${file.name}-${file.lastModified}-${index}`}
+        key={existingPhotoUrl ?? `${file.name}-${file.lastModified}-${index}`}
         className="group relative aspect-[4/4.8] overflow-hidden rounded-[1.5rem] border border-black/10 bg-black/5 shadow-sm"
       >
-        <img
-          src={preview}
-          alt={t("petForm.uploadedPhoto", { index: index + 1 })}
-          className="h-full w-full object-cover"
-        />
         <button
           type="button"
-          onClick={() => removePhoto(index)}
-          className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-base font-semibold text-black shadow-md transition hover:bg-white"
-          aria-label={t("petForm.removePhoto", { index: index + 1 })}
+          onClick={() => setLightboxIndex(index)}
+          disabled={!photoUrl}
+          aria-label={`${t("pets.fullscreen")}: ${photoLabel}`}
+          className="h-full w-full cursor-zoom-in focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-black"
         >
-          ×
+          {photoUrl ? (
+            <img
+              src={photoUrl}
+              alt={photoLabel}
+              className="h-full w-full object-cover"
+            />
+          ) : null}
         </button>
+        {file && !existingPhotoUrl ? (
+          <button
+            type="button"
+            onClick={() => removePhoto(selectedPhotoIndex)}
+            className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-base font-semibold text-black shadow-md transition hover:bg-white"
+            aria-label={t("petForm.removePhoto", { index: index + 1 })}
+          >
+            ×
+          </button>
+        ) : null}
       </div>
     );
   };
@@ -472,17 +475,19 @@ export default function PetsCreatePage() {
 
   return (
     <section className="relative overflow-hidden bg-[radial-gradient(circle_at_top_left,_rgba(254,200,233,0.28),_transparent_34%),radial-gradient(circle_at_85%_10%,_rgba(255,216,176,0.32),_transparent_30%),linear-gradient(180deg,_#fffdf9_0%,_#fff7ef_100%)] px-4 pb-16 [padding-top:calc(5rem+env(safe-area-inset-top))] sm:px-6 sm:[padding-top:6rem] lg:px-10">
-      <Link
-        to="/pets"
-        className="absolute right-6 top-6 rounded-full border border-black/10 bg-white/80 px-4 py-2 text-sm font-medium text-black shadow-sm backdrop-blur transition hover:bg-white"
-      >
-        {t("petForm.backToBrowse")}
-      </Link>
-
-      <div className="mx-auto grid w-full max-w-7xl gap-8 xl:grid-cols-[1.08fr_0.92fr]">
-        <div className="space-y-6">
-          <div className="inline-flex rounded-full border border-black/10 bg-white/80 px-4 py-2 text-sm font-medium shadow-sm backdrop-blur">
-            {t("petForm.eyebrow")}
+      <div className="mx-auto grid w-full max-w-7xl gap-8 lg:grid-cols-2">
+        <div className="space-y-6 lg:flex lg:flex-col">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="inline-flex rounded-full border border-black/10 bg-white/80 px-4 py-2 text-sm font-medium shadow-sm backdrop-blur">
+              {t("petForm.eyebrow")}
+            </div>
+            <Link
+              to="/pets"
+              className="inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-medium text-black/70 transition hover:bg-white/80 hover:text-black focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
+            >
+              <span aria-hidden="true">←</span>
+              {t("petForm.backToBrowse")}
+            </Link>
           </div>
 
           <div className="space-y-4">
@@ -497,7 +502,7 @@ export default function PetsCreatePage() {
             </p>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3">
             {[
               t("petForm.guidancePhotos", {
                 minimum: photoMinimum,
@@ -515,7 +520,7 @@ export default function PetsCreatePage() {
             ))}
           </div>
 
-          <div className="rounded-[2rem] border border-black/8 bg-white/90 p-4 shadow-[0_24px_70px_rgba(0,0,0,0.08)]">
+          <div className="rounded-[2rem] border border-black/8 bg-white/90 p-4 shadow-[0_24px_70px_rgba(0,0,0,0.08)] lg:flex-1">
             <div className="flex items-center justify-between gap-4 px-1 pt-1">
               <div>
                 <h2 className="text-xl font-semibold text-black">
@@ -562,8 +567,8 @@ export default function PetsCreatePage() {
           </div>
         </div>
 
-        <aside className="xl:sticky xl:top-24 xl:self-start">
-          <div className="rounded-[2rem] border border-black/8 bg-white/95 p-5 shadow-[0_24px_80px_rgba(0,0,0,0.1)] backdrop-blur md:p-8">
+        <aside className="min-w-0">
+          <div className="rounded-[2rem] border border-black/8 bg-white/95 p-5 shadow-[0_24px_80px_rgba(0,0,0,0.1)] backdrop-blur md:p-8 lg:h-full lg:p-6">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-sm font-medium text-black/50">
@@ -575,290 +580,301 @@ export default function PetsCreatePage() {
               </div>
             </div>
 
-            <form className="mt-8 space-y-4" onSubmit={onSubmit} noValidate>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <label className="relative block space-y-2">
-                  <span className="text-sm font-medium text-black/70">
-                    {t("petForm.name")}
-                  </span>
-                  <input
-                    className={inputClassName}
-                    placeholder="Luna"
-                    aria-invalid={Boolean(petForm.formState.errors.name)}
-                    {...petForm.register("name", {
-                      required: t("petForm.nameRequired"),
-                    })}
-                  />
-                  {petForm.formState.errors.name ? (
-                    <span className="text-sm text-[#b45309]">
-                      {petForm.formState.errors.name.message}
+            <form
+              className="mt-8 space-y-4 lg:mt-5"
+              onSubmit={onSubmit}
+              noValidate
+            >
+              <div className="grid gap-4 xl:grid-cols-2">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <label className="relative block space-y-2">
+                    <span className="text-sm font-medium text-black/70">
+                      {t("petForm.name")}
                     </span>
-                  ) : null}
-                </label>
+                    <input
+                      className={inputClassName}
+                      placeholder="Luna"
+                      aria-invalid={Boolean(petForm.formState.errors.name)}
+                      {...petForm.register("name", {
+                        required: t("petForm.nameRequired"),
+                      })}
+                    />
+                    {petForm.formState.errors.name ? (
+                      <span className="text-sm text-[#b45309]">
+                        {petForm.formState.errors.name.message}
+                      </span>
+                    ) : null}
+                  </label>
 
-                <div className="relative space-y-2">
-                  <span className="text-sm font-medium text-black/70">
-                    {t("petForm.species")}
-                  </span>
-                  <input
-                    className={inputClassName}
-                    value={speciesSearch}
-                    placeholder={t("pets.search")}
-                    aria-invalid={Boolean(petForm.formState.errors.species)}
-                    onChange={(event) => {
-                      setSpeciesSearch(event.target.value);
-                      petForm.setValue("species", "", { shouldDirty: true });
-                      petForm.setValue("breedId", "", { shouldDirty: true });
-                      setBreedSearch("");
-                    }}
-                  />
-                  <input
-                    type="hidden"
-                    {...petForm.register("species", {
-                      required: t("petForm.speciesRequired"),
-                    })}
-                  />
-                  {speciesSearch.trim().length >= 2 && !species ? (
-                    <div className="absolute z-10 w-full overflow-hidden rounded-xl border border-black/10 bg-white shadow-lg">
-                      {isSearchingSpecies ? (
-                        <p className="px-4 py-3 text-sm text-black/55">
-                          {t("common.loading")}
-                        </p>
-                      ) : null}
-                      {!isSearchingSpecies && speciesOptions.length === 0 ? (
-                        <p className="px-4 py-3 text-sm text-black/55">
-                          {t("pets.none")}
-                        </p>
-                      ) : null}
-                      {!isSearchingSpecies
-                        ? speciesOptions.map((option) => (
-                            <button
-                              key={option.id}
-                              type="button"
-                              className="block w-full px-4 py-3 text-left text-sm text-black transition hover:bg-[#fff7fb]"
-                              onClick={() => {
-                                petForm.setValue("species", option.enName, {
-                                  shouldDirty: true,
-                                  shouldValidate: true,
-                                });
-                                petForm.setValue("breedId", "", {
-                                  shouldDirty: true,
-                                });
-                                setSpeciesSearch(
-                                  getLocalizedSpeciesName(
-                                    option,
-                                    i18n.language,
-                                  ),
-                                );
-                                setBreedSearch("");
-                                setSpeciesOptions([]);
-                              }}
-                            >
-                              {getLocalizedSpeciesName(option, i18n.language)}
-                            </button>
-                          ))
-                        : null}
-                    </div>
-                  ) : null}
-                  {petForm.formState.errors.species ? (
-                    <span className="text-sm text-[#b45309]">
-                      {petForm.formState.errors.species.message}
+                  <div className="relative space-y-2">
+                    <span className="text-sm font-medium text-black/70">
+                      {t("petForm.species")}
                     </span>
-                  ) : null}
+                    <input
+                      className={inputClassName}
+                      value={speciesSearch}
+                      placeholder={t("pets.search")}
+                      aria-invalid={Boolean(petForm.formState.errors.species)}
+                      onChange={(event) => {
+                        setSpeciesSearch(event.target.value);
+                        petForm.setValue("species", "", { shouldDirty: true });
+                        petForm.setValue("breedId", "", { shouldDirty: true });
+                        setBreedSearch("");
+                      }}
+                    />
+                    <input
+                      type="hidden"
+                      {...petForm.register("species", {
+                        required: t("petForm.speciesRequired"),
+                      })}
+                    />
+                    {speciesSearch.trim().length >= 2 && !species ? (
+                      <div className="absolute z-10 w-full overflow-hidden rounded-xl border border-black/10 bg-white shadow-lg">
+                        {isSearchingSpecies ? (
+                          <p className="px-4 py-3 text-sm text-black/55">
+                            {t("common.loading")}
+                          </p>
+                        ) : null}
+                        {!isSearchingSpecies && speciesOptions.length === 0 ? (
+                          <p className="px-4 py-3 text-sm text-black/55">
+                            {t("pets.none")}
+                          </p>
+                        ) : null}
+                        {!isSearchingSpecies
+                          ? speciesOptions.map((option) => (
+                              <button
+                                key={option.id}
+                                type="button"
+                                className="block w-full px-4 py-3 text-left text-sm text-black transition hover:bg-[#fff7fb]"
+                                onClick={() => {
+                                  petForm.setValue("species", option.enName, {
+                                    shouldDirty: true,
+                                    shouldValidate: true,
+                                  });
+                                  petForm.setValue("breedId", "", {
+                                    shouldDirty: true,
+                                  });
+                                  setSpeciesSearch(
+                                    getLocalizedSpeciesName(
+                                      option,
+                                      i18n.language,
+                                    ),
+                                  );
+                                  setBreedSearch("");
+                                  setSpeciesOptions([]);
+                                }}
+                              >
+                                {getLocalizedSpeciesName(option, i18n.language)}
+                              </button>
+                            ))
+                          : null}
+                      </div>
+                    ) : null}
+                    {petForm.formState.errors.species ? (
+                      <span className="text-sm text-[#b45309]">
+                        {petForm.formState.errors.species.message}
+                      </span>
+                    ) : null}
+                  </div>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="relative space-y-2">
+                    <span className="text-sm font-medium text-black/70">
+                      {t("petForm.breed")}
+                    </span>
+                    <input
+                      className={inputClassName}
+                      value={breedSearch}
+                      placeholder={t("pets.search")}
+                      onChange={(event) => {
+                        setBreedSearch(event.target.value);
+                        petForm.setValue("breedId", "", { shouldDirty: true });
+                      }}
+                    />
+                    <input type="hidden" {...petForm.register("breedId")} />
+                    {breedSearch.trim().length >= 2 ? (
+                      <div className="absolute z-10 w-full overflow-hidden rounded-xl border border-black/10 bg-white shadow-lg">
+                        {isSearchingBreeds ? (
+                          <p className="px-4 py-3 text-sm text-black/55">
+                            {t("common.loading")}
+                          </p>
+                        ) : null}
+                        {!isSearchingBreeds && breedOptions.length === 0 ? (
+                          <p className="px-4 py-3 text-sm text-black/55">
+                            {t("pets.none")}
+                          </p>
+                        ) : null}
+                        {!isSearchingBreeds
+                          ? breedOptions.map((breed) => (
+                              <button
+                                key={breed.id}
+                                type="button"
+                                className="block w-full px-4 py-3 text-left text-sm text-black transition hover:bg-[#fff7fb]"
+                                onClick={() => {
+                                  petForm.setValue("breedId", breed.id, {
+                                    shouldDirty: true,
+                                    shouldValidate: true,
+                                  });
+                                  setBreedSearch(
+                                    getLocalizedBreedName(
+                                      breed,
+                                      i18n.language,
+                                    ) ?? "",
+                                  );
+                                  setBreedOptions([]);
+                                }}
+                              >
+                                {getLocalizedBreedName(breed, i18n.language)}
+                              </button>
+                            ))
+                          : null}
+                      </div>
+                    ) : null}
+                  </div>
+
+                  <label className="relative block space-y-2">
+                    <span className="text-sm font-medium text-black/70">
+                      {t("petForm.location")}
+                    </span>
+                    <input
+                      className={inputClassName}
+                      placeholder="Budapest"
+                      aria-invalid={Boolean(petForm.formState.errors.location)}
+                      onFocus={() => setIsLocationFocused(true)}
+                      {...petForm.register("location", {
+                        required: t("petForm.locationRequired"),
+                        onChange: () => {
+                          setSelectedLocation(null);
+                          setLocationOptions([]);
+                        },
+                      })}
+                    />
+                    {isLocationFocused && locationSearch.trim().length >= 3 ? (
+                      <div className="absolute z-10 w-full overflow-hidden rounded-xl border border-black/10 bg-white shadow-lg">
+                        {isSearchingLocations ? (
+                          <p className="px-4 py-3 text-sm text-black/55">
+                            {t("common.loading")}
+                          </p>
+                        ) : null}
+                        {!isSearchingLocations &&
+                        locationOptions.length === 0 ? (
+                          <p className="px-4 py-3 text-sm text-black/55">
+                            {t("petForm.noLocations")}
+                          </p>
+                        ) : null}
+                        {!isSearchingLocations
+                          ? locationOptions.map((option) => (
+                              <button
+                                key={`${option.latitude}-${option.longitude}`}
+                                type="button"
+                                className="block w-full px-4 py-3 text-left text-sm text-black transition hover:bg-[#fff7fb]"
+                                onClick={() => {
+                                  petForm.setValue("location", option.label, {
+                                    shouldDirty: true,
+                                    shouldValidate: true,
+                                  });
+                                  setSelectedLocation(option);
+                                  setIsLocationFocused(false);
+                                  setLocationOptions([]);
+                                }}
+                              >
+                                <span className="block font-medium">
+                                  {option.label}
+                                </span>
+                              </button>
+                            ))
+                          : null}
+                      </div>
+                    ) : null}
+                    {petForm.formState.errors.location ? (
+                      <span className="text-sm text-[#b45309]">
+                        {petForm.formState.errors.location.message}
+                      </span>
+                    ) : null}
+                  </label>
                 </div>
               </div>
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="relative space-y-2">
-                  <span className="text-sm font-medium text-black/70">
-                    {t("petForm.breed")}
-                  </span>
-                  <input
-                    className={inputClassName}
-                    value={breedSearch}
-                    placeholder={t("pets.search")}
-                    onChange={(event) => {
-                      setBreedSearch(event.target.value);
-                      petForm.setValue("breedId", "", { shouldDirty: true });
-                    }}
-                  />
-                  <input type="hidden" {...petForm.register("breedId")} />
-                  {breedSearch.trim().length >= 2 ? (
-                    <div className="absolute z-10 w-full overflow-hidden rounded-xl border border-black/10 bg-white shadow-lg">
-                      {isSearchingBreeds ? (
-                        <p className="px-4 py-3 text-sm text-black/55">
-                          {t("common.loading")}
-                        </p>
-                      ) : null}
-                      {!isSearchingBreeds && breedOptions.length === 0 ? (
-                        <p className="px-4 py-3 text-sm text-black/55">
-                          {t("pets.none")}
-                        </p>
-                      ) : null}
-                      {!isSearchingBreeds
-                        ? breedOptions.map((breed) => (
-                            <button
-                              key={breed.id}
-                              type="button"
-                              className="block w-full px-4 py-3 text-left text-sm text-black transition hover:bg-[#fff7fb]"
-                              onClick={() => {
-                                petForm.setValue("breedId", breed.id, {
-                                  shouldDirty: true,
-                                  shouldValidate: true,
-                                });
-                                setBreedSearch(
-                                  getLocalizedBreedName(breed, i18n.language) ??
-                                    "",
-                                );
-                                setBreedOptions([]);
-                              }}
-                            >
-                              {getLocalizedBreedName(breed, i18n.language)}
-                            </button>
-                          ))
-                        : null}
-                    </div>
-                  ) : null}
+              <div className="grid gap-4 2xl:grid-cols-[2fr_3fr]">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <label className="block space-y-2">
+                    <span className="text-sm font-medium text-black/70">
+                      {t("petForm.ageYears")}
+                    </span>
+                    <input
+                      type="number"
+                      min="0"
+                      className={inputClassName}
+                      placeholder="3"
+                      {...petForm.register("ageYears")}
+                    />
+                  </label>
+
+                  <label className="block space-y-2">
+                    <span className="text-sm font-medium text-black/70">
+                      {t("petForm.ageMonths")}
+                    </span>
+                    <input
+                      type="number"
+                      min="0"
+                      max="11"
+                      className={inputClassName}
+                      placeholder="6"
+                      {...petForm.register("ageMonths")}
+                    />
+                  </label>
                 </div>
 
-                <label className="block space-y-2">
-                  <span className="text-sm font-medium text-black/70">
-                    {t("petForm.location")}
-                  </span>
-                  <input
-                    className={inputClassName}
-                    placeholder="Budapest"
-                    aria-invalid={Boolean(petForm.formState.errors.location)}
-                    onFocus={() => setIsLocationFocused(true)}
-                    {...petForm.register("location", {
-                      required: t("petForm.locationRequired"),
-                      onChange: () => {
-                        setSelectedLocation(null);
-                        setLocationOptions([]);
-                      },
-                    })}
-                  />
-                  {isLocationFocused && locationSearch.trim().length >= 3 ? (
-                    <div className="absolute z-10 w-full overflow-hidden rounded-xl border border-black/10 bg-white shadow-lg">
-                      {isSearchingLocations ? (
-                        <p className="px-4 py-3 text-sm text-black/55">
-                          {t("common.loading")}
-                        </p>
-                      ) : null}
-                      {!isSearchingLocations && locationOptions.length === 0 ? (
-                        <p className="px-4 py-3 text-sm text-black/55">
-                          {t("petForm.noLocations")}
-                        </p>
-                      ) : null}
-                      {!isSearchingLocations
-                        ? locationOptions.map((option) => (
-                            <button
-                              key={`${option.latitude}-${option.longitude}`}
-                              type="button"
-                              className="block w-full px-4 py-3 text-left text-sm text-black transition hover:bg-[#fff7fb]"
-                              onClick={() => {
-                                petForm.setValue("location", option.label, {
-                                  shouldDirty: true,
-                                  shouldValidate: true,
-                                });
-                                setSelectedLocation(option);
-                                setIsLocationFocused(false);
-                                setLocationOptions([]);
-                              }}
-                            >
-                              <span className="block font-medium">
-                                {option.label}
-                              </span>
-                            </button>
-                          ))
-                        : null}
-                    </div>
-                  ) : null}
-                  {petForm.formState.errors.location ? (
-                    <span className="text-sm text-[#b45309]">
-                      {petForm.formState.errors.location.message}
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <label className="block space-y-2">
+                    <span className="text-sm font-medium text-black/70">
+                      {t("petForm.gender")}
                     </span>
-                  ) : null}
-                </label>
-              </div>
+                    <select
+                      className={inputClassName}
+                      {...petForm.register("gender")}
+                    >
+                      {genderOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                <label className="block space-y-2">
-                  <span className="text-sm font-medium text-black/70">
-                    {t("petForm.ageYears")}
-                  </span>
-                  <input
-                    type="number"
-                    min="0"
-                    className={inputClassName}
-                    placeholder="3"
-                    {...petForm.register("ageYears")}
-                  />
-                </label>
+                  <label className="block space-y-2">
+                    <span className="text-sm font-medium text-black/70">
+                      {t("petForm.size")}
+                    </span>
+                    <select
+                      className={inputClassName}
+                      {...petForm.register("size")}
+                    >
+                      {sizeOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
 
-                <label className="block space-y-2">
-                  <span className="text-sm font-medium text-black/70">
-                    {t("petForm.ageMonths")}
-                  </span>
-                  <input
-                    type="number"
-                    min="0"
-                    max="11"
-                    className={inputClassName}
-                    placeholder="6"
-                    {...petForm.register("ageMonths")}
-                  />
-                </label>
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-3">
-                <label className="block space-y-2">
-                  <span className="text-sm font-medium text-black/70">
-                    {t("petForm.gender")}
-                  </span>
-                  <select
-                    className={inputClassName}
-                    {...petForm.register("gender")}
-                  >
-                    {genderOptions.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-
-                <label className="block space-y-2">
-                  <span className="text-sm font-medium text-black/70">
-                    {t("petForm.size")}
-                  </span>
-                  <select
-                    className={inputClassName}
-                    {...petForm.register("size")}
-                  >
-                    {sizeOptions.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-
-                <label className="block space-y-2">
-                  <span className="text-sm font-medium text-black/70">
-                    {t("petForm.status")}
-                  </span>
-                  <select
-                    className={inputClassName}
-                    {...petForm.register("adoptionStatus")}
-                  >
-                    {statusOptions.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                  <label className="block space-y-2">
+                    <span className="text-sm font-medium text-black/70">
+                      {t("petForm.status")}
+                    </span>
+                    <select
+                      className={inputClassName}
+                      {...petForm.register("adoptionStatus")}
+                    >
+                      {statusOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
               </div>
 
               <label className="block space-y-2">
@@ -885,7 +901,7 @@ export default function PetsCreatePage() {
                 ) : null}
               </label>
 
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                 {toggleFields.map((item) => {
                   const active = watchedValues[item.field];
 
@@ -894,7 +910,7 @@ export default function PetsCreatePage() {
                       key={item.field}
                       type="button"
                       onClick={() => toggleField(item.field)}
-                      className={`flex w-full items-center justify-between rounded-3xl border px-4 py-4 text-left transition ${
+                      className={`flex w-full items-center justify-between gap-2 rounded-3xl border px-4 py-4 text-left transition lg:px-3 lg:py-2 ${
                         active
                           ? "border-[#ff86c8] bg-[#fec8e9] text-black shadow-[0_16px_40px_rgba(254,200,233,0.55)]"
                           : "border-black/10 bg-[#fffdf9] text-black/70 hover:border-black/20 hover:bg-[#fff9fd]"
@@ -909,7 +925,7 @@ export default function PetsCreatePage() {
                         </span>
                       </span>
                       <span
-                        className={`flex h-10 w-10 items-center justify-center rounded-full border text-lg font-semibold transition ${
+                        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border text-lg font-semibold transition lg:h-8 lg:w-8 ${
                           active
                             ? "border-black/15 bg-white text-black"
                             : "border-black/10 bg-white/70 text-black/50"
@@ -941,6 +957,20 @@ export default function PetsCreatePage() {
           </div>
         </aside>
       </div>
+      {lightboxIndex !== null ? (
+        <ImageLightbox
+          images={[
+            ...existingPhotoUrls.map(
+              (url) =>
+                `${import.meta.env.VITE_API_URL.replace(/\/api\/?$/, "")}${url}`,
+            ),
+            ...photoPreviews,
+          ]}
+          startIndex={lightboxIndex}
+          alt={t("petForm.photos")}
+          onClose={() => setLightboxIndex(null)}
+        />
+      ) : null}
     </section>
   );
 }

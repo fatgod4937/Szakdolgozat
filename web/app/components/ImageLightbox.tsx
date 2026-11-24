@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
@@ -39,16 +40,20 @@ export default function ImageLightbox({
     };
   }, [images.length, onClose]);
 
-  return (
+  return createPortal(
     <div
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4"
+      aria-label={t("pets.fullscreen")}
+      className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/90 p-4"
       onClick={onClose}
     >
       <button
         type="button"
-        onClick={onClose}
+        onClick={(event) => {
+          event.stopPropagation();
+          onClose();
+        }}
         aria-label={t("pets.closeFullscreen")}
         className="absolute right-4 top-4 flex h-11 w-11 items-center justify-center rounded-full bg-white/15 text-white hover:bg-white/25"
       >
@@ -91,6 +96,7 @@ export default function ImageLightbox({
           </span>
         </>
       ) : null}
-    </div>
+    </div>,
+    document.body,
   );
 }
