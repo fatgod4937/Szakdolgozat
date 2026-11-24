@@ -95,7 +95,7 @@ export default function ShelterRegistrationPage() {
     setSubmitError(null);
 
     if (documents.length < 1 || documents.length > 5) {
-      setDocumentError("Upload between 1 and 5 documents.");
+      setDocumentError(t("shelterRegistration.documentCount"));
       return;
     }
 
@@ -110,22 +110,20 @@ export default function ShelterRegistrationPage() {
       <div className="mx-auto flex w-full max-w-7xl flex-col px-6 py-12 lg:flex-row lg:items-start lg:px-12">
         <div className="max-w-xl space-y-6 lg:sticky lg:top-28">
           <span className="inline-flex rounded-full border border-black/10 bg-white/70 px-4 py-2 text-sm font-medium shadow-sm backdrop-blur">
-            Shelter registration
+            {t("shelterRegistration.eyebrow")}
           </span>
           <h1 className="text-4xl font-semibold tracking-tight text-black sm:text-5xl">
-            Register your shelter
+            {t("shelterRegistration.title")}
           </h1>
           <p className="max-w-lg text-base leading-7 text-black/70">
-            Create your shelter account and upload 1–5 documents. An
-            administrator reviews them manually before your shelter can publish
-            pet listings.
+            {t("shelterRegistration.description")}
           </p>
           <div className="grid gap-3 sm:grid-cols-2">
             {[
-              "1. Fill in your account and shelter details",
-              "2. Upload proof of your shelter (PDF, PNG, JPG)",
-              "3. Verify your email and identity",
-              "4. Wait for the administrator's decision",
+              t("shelterRegistration.stepDetails"),
+              t("shelterRegistration.stepDocuments"),
+              t("shelterRegistration.stepVerify"),
+              t("shelterRegistration.stepReview"),
             ].map((item) => (
               <div
                 key={item}
@@ -136,16 +134,16 @@ export default function ShelterRegistrationPage() {
             ))}
           </div>
           <p className="text-sm text-black/60">
-            Already registered?{" "}
+            {t("shelterRegistration.alreadyRegistered")}{" "}
             <Link to="/auth" className="font-semibold text-[#aa2f75] underline">
-              Log in
+              {t("auth.login")}
             </Link>
-            . Registering as an adopter?{" "}
+            . {t("shelterRegistration.registeringAdopter")}{" "}
             <Link
               to="/auth?mode=register"
               className="font-semibold text-[#aa2f75] underline"
             >
-              Sign up here
+              {t("shelterRegistration.signUpHere")}
             </Link>
             .
           </p>
@@ -157,33 +155,33 @@ export default function ShelterRegistrationPage() {
             onSubmit={form.handleSubmit(onSubmit)}
             noValidate
           >
-            <h2 className="text-lg font-semibold">Shelter details</h2>
-            <Field label="Shelter name" error={form.formState.errors.name?.message}>
+            <h2 className="text-lg font-semibold">{t("shelterRegistration.details")}</h2>
+            <Field label={t("shelterRegistration.name")} error={form.formState.errors.name?.message}>
               <input
                 className={inputClassName}
-                {...form.register("name", { required: "Shelter name is required." })}
+                {...form.register("name", { required: t("shelterRegistration.nameRequired") })}
               />
             </Field>
             <Field
-              label="Description"
+              label={t("shelterRegistration.descriptionLabel")}
               error={form.formState.errors.description?.message}
             >
               <textarea
                 className={`${inputClassName} min-h-28`}
                 {...form.register("description", {
-                  required: "A short description is required.",
+                  required: t("shelterRegistration.descriptionRequired"),
                 })}
               />
             </Field>
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="City" error={form.formState.errors.city?.message}>
+              <Field label={t("shelterRegistration.city")} error={form.formState.errors.city?.message}>
                 <input
                   className={inputClassName}
-                  {...form.register("city", { required: "City is required." })}
+                  {...form.register("city", { required: t("shelterRegistration.cityRequired") })}
                 />
               </Field>
               <Field
-                label="Shelter contact email"
+                label={t("shelterRegistration.contactEmail")}
                 error={form.formState.errors.contactEmail?.message}
               >
                 <input
@@ -200,7 +198,7 @@ export default function ShelterRegistrationPage() {
               </Field>
             </div>
             <Field
-              label="Website (optional, HTTPS)"
+              label={t("shelterRegistration.website")}
               error={form.formState.errors.websiteUrl?.message}
             >
               <input
@@ -211,21 +209,21 @@ export default function ShelterRegistrationPage() {
                   validate: (value) =>
                     !value ||
                     value.startsWith("https://") ||
-                    "The website must start with https://",
+                    t("shelterRegistration.websiteInvalid"),
                 })}
               />
             </Field>
 
             <Field
-              label="Verification documents"
-              hint="1–5 PDF, PNG, JPG, or JPEG files, up to 10 MB each."
+              label={t("shelterRegistration.documents")}
+              hint={t("shelterRegistration.documentsHint")}
               error={documentError ?? undefined}
             >
               <input
                 type="file"
                 multiple
                 accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg"
-                className="block w-full text-sm"
+                className="peer sr-only"
                 onChange={(event) => {
                   const selected = Array.from(event.target.files ?? []);
                   const invalid = selected.find(
@@ -237,8 +235,8 @@ export default function ShelterRegistrationPage() {
                   if (invalid || selected.length > 5) {
                     setDocumentError(
                       invalid
-                        ? "Documents must be PDF, PNG, JPG, or JPEG files up to 10 MB."
-                        : "You can upload at most 5 documents.",
+                        ? t("shelterRegistration.documentInvalid")
+                        : t("shelterRegistration.documentLimit"),
                     );
                     event.target.value = "";
                     setDocuments([]);
@@ -249,6 +247,9 @@ export default function ShelterRegistrationPage() {
                   setDocuments(selected);
                 }}
               />
+              <span className="inline-flex cursor-pointer items-center rounded-full border border-[#aa2f75] bg-[#fec8e9] px-4 py-2 text-sm font-semibold text-black transition hover:bg-[#ffb9df] peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-black">
+                {t("shelterRegistration.browse")}
+              </span>
             </Field>
             {documents.length > 0 ? (
               <ul className="space-y-1 text-sm text-black/70">
@@ -258,7 +259,7 @@ export default function ShelterRegistrationPage() {
               </ul>
             ) : null}
 
-            <h2 className="pt-4 text-lg font-semibold">Your account</h2>
+            <h2 className="pt-4 text-lg font-semibold">{t("shelterRegistration.account")}</h2>
             <div className="grid gap-4 sm:grid-cols-2">
               <Field
                 label={t("auth.lastName")}
@@ -395,7 +396,7 @@ export default function ShelterRegistrationPage() {
             >
               {form.formState.isSubmitting
                 ? t("auth.registering")
-                : "Register shelter and submit for review"}
+                : t("shelterRegistration.submit")}
             </button>
           </form>
         </div>

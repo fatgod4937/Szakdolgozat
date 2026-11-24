@@ -46,12 +46,12 @@ export default function AuthRegisterForm({ onSubmit, submitError }: Props) {
       noValidate
     >
       <p className="rounded-2xl border border-black/10 bg-[#fffdf9] p-4 text-sm text-black/70">
-        Registering a shelter organization?{" "}
+        {t("shelterRegistration.registeringShelter")}{" "}
         <Link
           to="/shelter-registration"
           className="font-semibold text-[#aa2f75] underline"
         >
-          Use the shelter registration form
+          {t("shelterRegistration.useForm")}
         </Link>
         .
       </p>

@@ -1,4 +1,5 @@
 import type { InputHTMLAttributes, ReactElement } from "react";
+import { useTranslation } from "react-i18next";
 import {
   formatHungarianPhoneNumber,
   getHungarianNationalNumber,
@@ -20,6 +21,7 @@ export default function HungarianPhoneNumberInput({
   value,
   ...inputProps
 }: HungarianPhoneNumberInputProps): ReactElement {
+  const { t } = useTranslation();
   const nationalNumber = getHungarianNationalNumber(value);
   const displayValue = formatHungarianPhoneNumber(nationalNumber);
 
@@ -42,7 +44,9 @@ export default function HungarianPhoneNumberInput({
           onChange={(event) =>
             onChange(toHungarianPhoneNumber(event.target.value))
           }
-          aria-label={`${inputProps["aria-label"] ?? "Phone number"}, Hungarian country code +36`}
+          aria-label={t("auth.hungarianPhoneLabel", {
+            label: inputProps["aria-label"] ?? t("auth.phoneNumber"),
+          })}
           className={`relative z-10 w-full bg-transparent px-4 py-3 font-mono text-transparent caret-black outline-none placeholder:text-transparent ${className ?? ""}`}
         />
         <span
