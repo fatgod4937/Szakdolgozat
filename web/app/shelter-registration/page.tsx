@@ -30,6 +30,8 @@ type ShelterRegistrationValues = {
   acceptTerms: boolean;
 };
 
+type DocumentError = "documentCount" | "documentInvalid" | "documentLimit";
+
 const inputClassName =
   "w-full rounded-2xl border border-black/10 bg-[#fffdf9] px-4 py-3 outline-none transition placeholder:text-black/30 focus:border-black/25";
 
@@ -37,7 +39,7 @@ export default function ShelterRegistrationPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [documents, setDocuments] = useState<File[]>([]);
-  const [documentError, setDocumentError] = useState<string | null>(null);
+  const [documentError, setDocumentError] = useState<DocumentError | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const form = useForm<ShelterRegistrationValues>({
     mode: "onBlur",
@@ -95,7 +97,7 @@ export default function ShelterRegistrationPage() {
     setSubmitError(null);
 
     if (documents.length < 1 || documents.length > 5) {
-      setDocumentError(t("shelterRegistration.documentCount"));
+      setDocumentError("documentCount");
       return;
     }
 
@@ -217,12 +219,13 @@ export default function ShelterRegistrationPage() {
             <Field
               label={t("shelterRegistration.documents")}
               hint={t("shelterRegistration.documentsHint")}
-              error={documentError ?? undefined}
+              error={documentError ? t(`shelterRegistration.${documentError}`) : undefined}
             >
               <input
                 type="file"
                 multiple
                 accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg"
+                aria-label={t("shelterRegistration.browse")}
                 className="peer sr-only"
                 onChange={(event) => {
                   const selected = Array.from(event.target.files ?? []);
@@ -235,8 +238,8 @@ export default function ShelterRegistrationPage() {
                   if (invalid || selected.length > 5) {
                     setDocumentError(
                       invalid
-                        ? t("shelterRegistration.documentInvalid")
-                        : t("shelterRegistration.documentLimit"),
+                        ? "documentInvalid"
+                        : "documentLimit",
                     );
                     event.target.value = "";
                     setDocuments([]);
@@ -247,7 +250,7 @@ export default function ShelterRegistrationPage() {
                   setDocuments(selected);
                 }}
               />
-              <span className="inline-flex cursor-pointer items-center rounded-full border border-[#aa2f75] bg-[#fec8e9] px-4 py-2 text-sm font-semibold text-black transition hover:bg-[#ffb9df] peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-black">
+              <span className="flex w-fit cursor-pointer items-center rounded-full border border-[#aa2f75] bg-[#fec8e9] px-4 py-2 text-sm font-semibold text-black transition hover:bg-[#ffb9df] peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-black">
                 {t("shelterRegistration.browse")}
               </span>
             </Field>
