@@ -1,7 +1,9 @@
 import { ArrowRight } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 
 const HeroSection = () => {
+  const { t } = useTranslation();
   return (
     <section className="relative isolate min-h-[100svh] overflow-hidden bg-gradient-to-t from-white via-[#fffaf3] to-[var(--hero-top-color)]">
       <div
@@ -11,11 +13,10 @@ const HeroSection = () => {
       />
       <div className="relative z-10 mx-auto flex min-h-[100svh] w-full max-w-5xl flex-col items-center px-5 pb-[42svh] pt-[calc(8rem+env(safe-area-inset-top))] text-center sm:px-8 sm:pb-[48svh] lg:justify-center lg:pb-[32svh]">
         <p className="text-4xl font-semibold text-black sm:text-5xl lg:text-6xl">
-          Fogadj örökbe egy életet
+          {t("home.title")}
         </p>
         <p className="max-w-3xl pt-5 text-base leading-7 text-black sm:pt-8 sm:text-xl">
-          Adj egy szereto otthont egy raszorulo kisallatnak, es legy az o orok
-          csaladja. Talald meg a huseges tarsadat meg ma!
+          {t("home.description")}
         </p>
         <Link
           to="/auth?mode=register"
@@ -28,7 +29,7 @@ const HeroSection = () => {
               className="scale-[1] transition-transform duration-300 ease-out group-hover:scale-150 group-focus-visible:scale-150"
             />
           </span>
-          <span>Get Started</span>
+          <span>{t("home.getStarted")}</span>
         </Link>
       </div>
     </section>

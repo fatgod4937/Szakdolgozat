@@ -21,6 +21,7 @@ import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { hashPassword, verifyPassword } from './utils/password-hash.util';
+import { EmailLanguage } from './utils/email-language.util';
 
 type AuthTokenPayload = {
   sub: string;
@@ -73,12 +74,15 @@ export class AuthService {
     private readonly configService: ConfigService,
   ) {}
 
-  async register(registerDto: RegisterDto) {
-    const { message } = await this.registerAccount(registerDto);
+  async register(registerDto: RegisterDto, language: EmailLanguage = 'en') {
+    const { message } = await this.registerAccount(registerDto, language);
     return { message };
   }
 
-  async registerAccount(registerDto: RegisterDto) {
+  async registerAccount(
+    registerDto: RegisterDto,
+    language: EmailLanguage = 'en',
+  ) {
     try {
       if (!registerDto.passwordHash) {
         throw new BadRequestException('passwordHash is required.');
@@ -127,6 +131,7 @@ export class AuthService {
         user.email,
         user.firstName,
         verificationToken,
+        language,
       );
 
       return {
@@ -180,7 +185,7 @@ export class AuthService {
     return this.buildAuthResponse(user);
   }
 
-  async requestPasswordReset(email: string) {
+  async requestPasswordReset(email: string, language: EmailLanguage = 'en') {
     const normalizedEmail = email?.trim();
     const response = {
       message:
@@ -209,7 +214,12 @@ export class AuthService {
       },
     });
 
-    await this.sendPasswordResetEmail(user.email, user.firstName, resetToken);
+    await this.sendPasswordResetEmail(
+      user.email,
+      user.firstName,
+      resetToken,
+      language,
+    );
     return response;
   }
 
@@ -443,6 +453,7 @@ export class AuthService {
   async changeEmail(
     userId: string,
     dto: { currentPasswordHash: string; email: string },
+    language: EmailLanguage = 'en',
   ) {
     const user = await this.requireCurrentPassword(
       userId,
@@ -475,7 +486,12 @@ export class AuthService {
       throw error;
     }
 
-    await this.sendVerificationEmail(email, user.firstName, verificationToken);
+    await this.sendVerificationEmail(
+      email,
+      user.firstName,
+      verificationToken,
+      language,
+    );
     return { verificationRequired: true };
   }
 
@@ -556,6 +572,7 @@ export class AuthService {
     email: string,
     firstName: string,
     token: string,
+    language: EmailLanguage,
   ) {
     const verificationUrl = `${this.getWebAppUrl()}/verify-email?token=${token}`;
     const apiKey = this.configService.get<string>('RESEND_API_KEY');
@@ -576,8 +593,15 @@ export class AuthService {
       const { error } = await resend.emails.send({
         from,
         to: email,
-        subject: 'Verify your Floofs account',
-        html: this.buildVerificationEmailHtml(firstName, verificationUrl),
+        subject:
+          language === 'hu'
+            ? 'Erősítsd meg a Floofs-fiókodat'
+            : 'Verify your Floofs account',
+        html: this.buildVerificationEmailHtml(
+          firstName,
+          verificationUrl,
+          language,
+        ),
         attachments: [
           {
             content: logoContent.toString('base64'),
@@ -603,6 +627,7 @@ export class AuthService {
     email: string,
     firstName: string,
     token: string,
+    language: EmailLanguage,
   ) {
     const passwordResetUrl = `${this.getWebAppUrl()}/reset-password?token=${encodeURIComponent(token)}`;
     const apiKey = this.configService.get<string>('RESEND_API_KEY');
@@ -618,8 +643,15 @@ export class AuthService {
       const { error } = await resend.emails.send({
         from,
         to: email,
-        subject: 'Reset your Floofs password',
-        html: this.buildPasswordResetEmailHtml(firstName, passwordResetUrl),
+        subject:
+          language === 'hu'
+            ? 'Floofs-jelszó visszaállítása'
+            : 'Reset your Floofs password',
+        html: this.buildPasswordResetEmailHtml(
+          firstName,
+          passwordResetUrl,
+          language,
+        ),
       });
 
       if (error) {
@@ -654,6 +686,7 @@ export class AuthService {
   private buildVerificationEmailHtml(
     firstName: string,
     verificationUrl: string,
+    language: EmailLanguage,
   ) {
     const escapeHtml = (value: string) =>
       value.replace(
@@ -667,16 +700,43 @@ export class AuthService {
             '"': '&quot;',
           })[character] ?? character,
       );
-    const safeName = escapeHtml(firstName.trim() || 'there');
+    const safeName = escapeHtml(
+      firstName.trim() || (language === 'hu' ? 'felhasználó' : 'there'),
+    );
     const safeUrl = escapeHtml(verificationUrl);
     const dataSafetyUrl = escapeHtml(`${this.getWebAppUrl()}/data-safety`);
+    const text =
+      language === 'hu'
+        ? {
+            title: 'Üdvözlünk a Floofsnál!',
+            greeting: 'Szia',
+            description:
+              'A Floofs-fiókod elkészült. Erősítsd meg az e-mail-címedet, hogy állatokat fedezhess fel és kapcsolatba léphess a gondozóikkal.',
+            action: 'E-mail-cím megerősítése',
+            expiry:
+              'Ez a link 24 óráig érvényes. Ha nem hoztál létre Floofs-fiókot, nyugodtan figyelmen kívül hagyhatod ezt az e-mailt.',
+            privacy: 'Fontos számunkra az adataid és a fiókod biztonsága.',
+            policy: 'Olvasd el adatvédelmi tájékoztatónkat',
+          }
+        : {
+            title: 'Welcome to Floofs!',
+            greeting: 'Hello',
+            description:
+              'Your Floofs account is ready. Confirm your email address to start discovering pets and connecting with their carers.',
+            action: 'Verify email address',
+            expiry:
+              'This link expires in 24 hours. If you did not create a Floofs account, you can safely ignore this email.',
+            privacy: 'Your privacy and account security matter to us.',
+            policy: 'Read our Data Safety policy',
+          };
 
-    return `<!doctype html><html lang="en"><body style="margin:0;background:#ffffff;color:#231f20;font-family:Arial,sans-serif"><table role="presentation" width="100%" cellspacing="0" cellpadding="0"><tr><td align="center" style="padding:32px 16px"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:600px;background:#ffffff;border:1px solid #f0dce5"><tr><td style="padding:28px 36px;background:#fec8e9"><table role="presentation" width="100%" cellspacing="0" cellpadding="0"><tr><td width="76" valign="middle"><img src="cid:floofs-logo" width="60" height="60" alt="Floofs" style="display:block;width:60px;height:60px;object-fit:contain" /></td><td valign="middle"><p style="margin:0;font-size:13px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase">Floofs</p><h1 style="margin:8px 0 0;font-size:32px;line-height:1.15">Welcome to Floofs!</h1></td></tr></table></td></tr><tr><td style="padding:32px 36px"><p style="margin:0 0 16px;font-size:16px;line-height:1.6">Hello ${safeName},</p><p style="margin:0 0 24px;font-size:16px;line-height:1.6">Your Floofs account is ready. Confirm your email address to start discovering pets and connecting with their carers.</p><p style="margin:0 0 28px"><a href="${safeUrl}" style="display:inline-block;background:#231f20;color:#ffffff;padding:14px 22px;text-decoration:none;font-weight:700">Verify email address</a></p><p style="margin:0;font-size:14px;line-height:1.6;color:#62595d">This link expires in 24 hours. If you did not create a Floofs account, you can safely ignore this email.</p></td></tr><tr><td style="padding:22px 36px;background:#fff8f2;border-top:1px solid #f0dce5"><p style="margin:0 0 8px;font-size:13px;color:#62595d">Your privacy and account security matter to us.</p><a href="${dataSafetyUrl}" style="font-size:13px;color:#8d245f">Read our Data Safety policy</a></td></tr></table></td></tr></table></body></html>`;
+    return `<!doctype html><html lang="${language}"><body style="margin:0;background:#ffffff;color:#231f20;font-family:Arial,sans-serif"><table role="presentation" width="100%" cellspacing="0" cellpadding="0"><tr><td align="center" style="padding:32px 16px"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:600px;background:#ffffff;border:1px solid #f0dce5"><tr><td style="padding:28px 36px;background:#fec8e9"><table role="presentation" width="100%" cellspacing="0" cellpadding="0"><tr><td width="76" valign="middle"><img src="cid:floofs-logo" width="60" height="60" alt="Floofs" style="display:block;width:60px;height:60px;object-fit:contain" /></td><td valign="middle"><p style="margin:0;font-size:13px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase">Floofs</p><h1 style="margin:8px 0 0;font-size:32px;line-height:1.15">${text.title}</h1></td></tr></table></td></tr><tr><td style="padding:32px 36px"><p style="margin:0 0 16px;font-size:16px;line-height:1.6">${text.greeting} ${safeName},</p><p style="margin:0 0 24px;font-size:16px;line-height:1.6">${text.description}</p><p style="margin:0 0 28px"><a href="${safeUrl}" style="display:inline-block;background:#231f20;color:#ffffff;padding:14px 22px;text-decoration:none;font-weight:700">${text.action}</a></p><p style="margin:0;font-size:14px;line-height:1.6;color:#62595d">${text.expiry}</p></td></tr><tr><td style="padding:22px 36px;background:#fff8f2;border-top:1px solid #f0dce5"><p style="margin:0 0 8px;font-size:13px;color:#62595d">${text.privacy}</p><a href="${dataSafetyUrl}" style="font-size:13px;color:#8d245f">${text.policy}</a></td></tr></table></td></tr></table></body></html>`;
   }
 
   private buildPasswordResetEmailHtml(
     firstName: string,
     passwordResetUrl: string,
+    language: EmailLanguage,
   ) {
     const escapeHtml = (value: string) =>
       value.replace(
@@ -690,10 +750,32 @@ export class AuthService {
             '"': '&quot;',
           })[character] ?? character,
       );
-    const safeName = escapeHtml(firstName.trim() || 'there');
+    const safeName = escapeHtml(
+      firstName.trim() || (language === 'hu' ? 'felhasználó' : 'there'),
+    );
     const safeUrl = escapeHtml(passwordResetUrl);
+    const text =
+      language === 'hu'
+        ? {
+            title: 'Jelszó visszaállítása',
+            greeting: 'Szia',
+            description:
+              'Az alábbi link segítségével új jelszót választhatsz a Floofs-fiókodhoz.',
+            action: 'Jelszó visszaállítása',
+            expiry:
+              'Ez a link egy óráig érvényes és egyszer használható. Ha nem te kérted, nyugodtan figyelmen kívül hagyhatod ezt az e-mailt.',
+          }
+        : {
+            title: 'Reset your password',
+            greeting: 'Hello',
+            description:
+              'Use the link below to choose a new password for your Floofs account.',
+            action: 'Reset password',
+            expiry:
+              'This link expires in one hour and can be used once. If you did not request it, you can safely ignore this email.',
+          };
 
-    return `<!doctype html><html lang="en"><body style="margin:0;background:#ffffff;color:#231f20;font-family:Arial,sans-serif"><table role="presentation" width="100%" cellspacing="0" cellpadding="0"><tr><td align="center" style="padding:32px 16px"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:600px;background:#ffffff;border:1px solid #f0dce5"><tr><td style="padding:28px 36px;background:#fec8e9"><p style="margin:0;font-size:13px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase">Floofs</p><h1 style="margin:8px 0 0;font-size:32px;line-height:1.15">Reset your password</h1></td></tr><tr><td style="padding:32px 36px"><p style="margin:0 0 16px;font-size:16px;line-height:1.6">Hello ${safeName},</p><p style="margin:0 0 24px;font-size:16px;line-height:1.6">Use the link below to choose a new password for your Floofs account.</p><p style="margin:0 0 28px"><a href="${safeUrl}" style="display:inline-block;background:#231f20;color:#ffffff;padding:14px 22px;text-decoration:none;font-weight:700">Reset password</a></p><p style="margin:0;font-size:14px;line-height:1.6;color:#62595d">This link expires in one hour and can be used once. If you did not request it, you can safely ignore this email.</p></td></tr></table></td></tr></table></body></html>`;
+    return `<!doctype html><html lang="${language}"><body style="margin:0;background:#ffffff;color:#231f20;font-family:Arial,sans-serif"><table role="presentation" width="100%" cellspacing="0" cellpadding="0"><tr><td align="center" style="padding:32px 16px"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:600px;background:#ffffff;border:1px solid #f0dce5"><tr><td style="padding:28px 36px;background:#fec8e9"><p style="margin:0;font-size:13px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase">Floofs</p><h1 style="margin:8px 0 0;font-size:32px;line-height:1.15">${text.title}</h1></td></tr><tr><td style="padding:32px 36px"><p style="margin:0 0 16px;font-size:16px;line-height:1.6">${text.greeting} ${safeName},</p><p style="margin:0 0 24px;font-size:16px;line-height:1.6">${text.description}</p><p style="margin:0 0 28px"><a href="${safeUrl}" style="display:inline-block;background:#231f20;color:#ffffff;padding:14px 22px;text-decoration:none;font-weight:700">${text.action}</a></p><p style="margin:0;font-size:14px;line-height:1.6;color:#62595d">${text.expiry}</p></td></tr></table></td></tr></table></body></html>`;
   }
 
   private buildAuthResponse(user: AuthUser) {

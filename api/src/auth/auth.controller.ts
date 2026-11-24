@@ -11,7 +11,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { Request, type Response } from 'express';
+import type { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { DiditVerificationService } from './didit-verification.service';
 import { LoginDto } from './dto/login.dto';
@@ -30,6 +30,7 @@ import {
 } from './dto/account-settings.dto';
 import { JwtAuthGuard, JwtAuthUser } from './jwt-auth.guard';
 import { IdentityVerificationGuard } from './identity-verification.guard';
+import { getEmailLanguage } from './utils/email-language.util';
 
 type JwtRequest = Request & {
   user?: JwtAuthUser;
@@ -43,8 +44,8 @@ export class AuthController {
   ) {}
 
   @Post('register')
-  register(@Body() registerDto: RegisterDto) {
-    return this.authService.register(registerDto);
+  register(@Body() registerDto: RegisterDto, @Req() request: Request) {
+    return this.authService.register(registerDto, getEmailLanguage(request));
   }
 
   @Post('login')
@@ -53,8 +54,14 @@ export class AuthController {
   }
 
   @Post('forgot-password')
-  requestPasswordReset(@Body() dto: PasswordResetRequestDto) {
-    return this.authService.requestPasswordReset(dto.email);
+  requestPasswordReset(
+    @Body() dto: PasswordResetRequestDto,
+    @Req() request: Request,
+  ) {
+    return this.authService.requestPasswordReset(
+      dto.email,
+      getEmailLanguage(request),
+    );
   }
 
   @Post('reset-password')
@@ -117,9 +124,7 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @Post('didit/session')
   createDiditSession(@Req() request: JwtRequest) {
-    return this.diditVerificationService.createSession(
-      request.user?.sub ?? '',
-    );
+    return this.diditVerificationService.createSession(request.user?.sub ?? '');
   }
 
   @UseGuards(JwtAuthGuard, IdentityVerificationGuard)
@@ -131,7 +136,11 @@ export class AuthController {
   @UseGuards(JwtAuthGuard, IdentityVerificationGuard)
   @Post('me/email')
   changeEmail(@Req() request: JwtRequest, @Body() dto: ChangeEmailDto) {
-    return this.authService.changeEmail(request.user?.sub ?? '', dto);
+    return this.authService.changeEmail(
+      request.user?.sub ?? '',
+      dto,
+      getEmailLanguage(request),
+    );
   }
 
   @UseGuards(JwtAuthGuard, IdentityVerificationGuard)

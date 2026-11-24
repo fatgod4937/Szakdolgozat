@@ -1,3 +1,5 @@
+import i18n from "../i18n";
+
 const apiBaseUrl = import.meta.env.VITE_API_URL;
 
 function getAccessToken() {
@@ -53,6 +55,7 @@ async function request<TResponse>(
 ): Promise<TResponse> {
   const headers: Record<string, string> = {
     Accept: "application/json",
+    "Accept-Language": i18n.resolvedLanguage ?? i18n.language,
   };
 
   if (options.auth) {

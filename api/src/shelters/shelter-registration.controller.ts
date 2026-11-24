@@ -3,11 +3,14 @@ import {
   Body,
   Controller,
   Post,
+  Req,
   UploadedFiles,
   UseInterceptors,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { AuthService } from '../auth/auth.service';
+import type { Request } from 'express';
+import { getEmailLanguage } from '../auth/utils/email-language.util';
 import { SheltersService } from './shelters.service';
 
 type RegistrationBody = {
@@ -36,6 +39,7 @@ export class ShelterRegistrationController {
   @UseInterceptors(FilesInterceptor('documents', 5))
   async register(
     @Body() body: RegistrationBody,
+    @Req() request: Request,
     @UploadedFiles()
     files: Array<{
       originalname: string;
@@ -51,17 +55,20 @@ export class ShelterRegistrationController {
     this.sheltersService.assertValidDocuments(files);
     this.sheltersService.assertApplicationDetails(body);
 
-    const { message, userId } = await this.authService.registerAccount({
-      email: body.email,
-      password: '',
-      passwordHash: body.passwordHash,
-      firstName: body.firstName,
-      lastName: body.lastName,
-      phoneNumber: body.phoneNumber,
-      acceptDataSafety:
-        body.acceptDataSafety === true || body.acceptDataSafety === 'true',
-      accountType: 'shelter',
-    });
+    const { message, userId } = await this.authService.registerAccount(
+      {
+        email: body.email,
+        password: '',
+        passwordHash: body.passwordHash,
+        firstName: body.firstName,
+        lastName: body.lastName,
+        phoneNumber: body.phoneNumber,
+        acceptDataSafety:
+          body.acceptDataSafety === true || body.acceptDataSafety === 'true',
+        accountType: 'shelter',
+      },
+      getEmailLanguage(request),
+    );
 
     await this.sheltersService.submitApplication(userId, body, files);
 
